@@ -1,5 +1,30 @@
 [
   {
+    "id": "1786710778265",
+    "userId": "usr_g_1786710750169",
+    "title": "telll me about html with exampls",
+    "messages": [
+      {
+        "role": "user",
+        "content": "telll me about html with exampls",
+        "timestamp": "2026-08-14T12:32:58.265Z"
+      },
+      {
+        "role": "user",
+        "content": "telll me about html with exampls",
+        "timestamp": "2026-08-14T12:33:27.176Z"
+      },
+      {
+        "role": "assistant",
+        "content": "**HTML** stands for **HyperText Markup Language**. It is the standard language used to create and structure pages on the internet. \n\nThink of HTML as the **skeleton** of a webpage. It defines the structure—where the headers, paragraphs, images, and links go. (You then use **CSS** to make it look pretty, and **JavaScript** to make it interactive).\n\n---\n\n### How HTML Works (Tags and Elements)\nHTML uses **tags** to label different types of content. Tags are written inside angle brackets: `<tagname>`.\n\nMost elements have a **start tag** and an **end tag** (which has a slash `/`).\n*   Example: `<h1>This is a heading</h1>`\n\n---\n\n### 1. A Basic HTML Document\nHere is what a complete, simple HTML page looks like:\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>My First Webpage</title>\n</head>\n<body>\n\n    <h1>Welcome to My Website</h1>\n    <p>This is a paragraph of text on my brand new website.</p>\n\n</body>\n</html>\n```\n\n#### Explanation of the Code:\n*   `<!DOCTYPE html>`: Tells the browser that this is an HTML5 document.\n*   `<html>`: The container for the entire webpage.\n*   `<head>`: Contains information *about* the page (like the title that appears on the browser tab), but not the visible content.\n*   `<title>`: Sets the title of the webpage.\n*   `<body>`: Contains the actual content that you see on the screen (text, images, links).\n*   `<h1>`: A major heading (Header 1).\n*   `<p>`: A paragraph.\n\n---\n\n### 2. Common HTML Examples\n\nHere are some of the most common elements you will use when building a website:\n\n#### A. Headings (H1 to H6)\nHTML has six levels of headings. `<h1>` is the most important (largest), and `<h6>` is the least important (smallest).\n```html\n<h1>This is a massive heading</h1>\n<h2>This is a sub-heading</h2>\n<h3>This is a smaller sub-heading</h3>\n```\n\n#### B. Links (The \"Anchor\" Tag)\nTo link to another website, you use the `<a>` tag with an `href` attribute (which specifies the URL).\n```html\n<a href=\"https://www.google.com\">Click here to go to Google</a>\n```\n\n#### C. Images\nTo display an image, you use the `<img>` tag. This tag is \"self-closing\" (it doesn't need a `</img>` at the end). It uses `src` (the image source path) and `alt` (description of the image).\n```html\n<img src=\"https://example.com/dog.jpg\" alt=\"A cute golden retriever puppy\">\n```\n\n#### D. Lists\nYou can make bulleted (unordered) lists or numbered (ordered) lists.\n\n**Bullet points (Unordered List - `<ul>`):**\n```html\n<ul>\n    <li>Apples</li>\n    <li>Bananas</li>\n    <li>Oranges</li>\n</ul>\n```\n\n**Numbered list (Ordered List - `<ol>`):**\n```html\n<ol>\n    <li>Wake up</li>\n    <li>Make coffee</li>\n    <li>Code</li>\n</ol>\n```\n\n---\n\n### How to try this yourself:\n1. Open a simple text editor like **Notepad** (Windows) or **TextEdit** (Mac).\n2. Copy and paste the \"Basic HTML Document\" code from above into the editor.\n3. Save the file as **`index.html`** (make sure the extension is `.html`, not `.txt`).\n4. Double-click the file. It will open instantly in your web browser (Chrome, Safari, Edge) as a real webpage!",
+        "model": "gemini-flash-latest",
+        "timestamp": "2026-08-14T12:33:35.703Z"
+      }
+    ],
+    "updatedAt": "2026-08-14T12:33:35.730Z",
+    "createdAt": "2026-08-14T12:32:58.526Z"
+  },
+  {
     "id": "1786710531250",
     "userId": "guest",
     "title": "please explain about frontend",

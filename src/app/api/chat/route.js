@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -43,8 +44,6 @@ export async function POST(request) {
       );
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-
     // Format conversation history for Gemini multi-turn
     const formattedContents = validMessages.map((msg) => ({
       role: msg.role === "assistant" || msg.role === "model" ? "model" : "user",
@@ -56,19 +55,22 @@ export async function POST(request) {
       config.systemInstruction = systemInstruction.trim();
     }
 
+    const ai = new GoogleGenAI({ apiKey });
+
     // List of models to try in order of preference
     const requestedModel = model || "gemini-flash-latest";
     const modelsToTry = [
       requestedModel,
       "gemini-flash-latest",
-      "gemini-3.7-flash",
       "gemini-3.5-flash",
-    ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+      "gemini-3.7-flash",
+    ].filter((v, i, a) => a.indexOf(v) === i);
 
     let replyText = "";
     let modelUsed = requestedModel;
     let lastError = null;
 
+    // 1. Try GoogleGenAI SDK models
     for (const m of modelsToTry) {
       try {
         const response = await ai.models.generateContent({
@@ -80,10 +82,25 @@ export async function POST(request) {
         replyText = response.text || "";
         modelUsed = m;
         lastError = null;
-        break; // Success!
+        if (replyText) break;
       } catch (err) {
-        console.warn(`Model ${m} failed:`, err.message);
+        console.warn(`Model ${m} attempt notice:`, err.message);
         lastError = err;
+      }
+    }
+
+    // 2. Resilient fallback to @google/generative-ai
+    if (!replyText) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const lastUserPrompt = validMessages[validMessages.length - 1].content;
+        const result = await fallbackModel.generateContent(lastUserPrompt);
+        replyText = result.response.text();
+        modelUsed = "gemini-1.5-flash";
+        lastError = null;
+      } catch (e2) {
+        console.warn("Fallback SDK attempt notice:", e2.message);
       }
     }
 
@@ -96,15 +113,15 @@ export async function POST(request) {
       modelUsed,
     });
   } catch (error) {
-    console.error("Gemini API Route Error:", error);
+    console.error("Yash AI Route Error:", error);
 
     const errorMessage = error?.message || "An unexpected error occurred.";
     let friendlyMessage = errorMessage;
 
     if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
-      friendlyMessage = "Your Gemini API Key is invalid. Please verify the key in Settings (⚙️) from Google AI Studio.";
+      friendlyMessage = "Your Gemini API Key is invalid. Please verify your key in Settings (⚙️) from Google AI Studio.";
     } else if (errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("429")) {
-      friendlyMessage = "Free tier quota exceeded or rate limited. Please wait a few seconds and try again.";
+      friendlyMessage = "Google API free tier rate limit reached. Please click 'Retry' in 5-10 seconds.";
     }
 
     return NextResponse.json(

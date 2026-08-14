@@ -8,12 +8,28 @@ export default function ChatInput({
   loading, 
   onStop,
   modelName = "gemini-flash-latest",
-  disabled = false
+  disabled = false,
+  externalInput = "",
+  onClearExternalInput
 }) {
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Sync external recalled input
+  useEffect(() => {
+    if (externalInput) {
+      setInput(externalInput);
+      if (onClearExternalInput) onClearExternalInput();
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(externalInput.length, externalInput.length);
+        }
+      }, 50);
+    }
+  }, [externalInput, onClearExternalInput]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -93,7 +109,7 @@ export default function ChatInput({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Gemini anything... (Shift+Enter for new line)"
+          placeholder="Ask Yash AI anything... (Shift+Enter for new line)"
           disabled={disabled}
           rows={1}
           className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 px-3.5 pt-3 pb-11 outline-none resize-none text-xs md:text-sm leading-relaxed max-h-[180px] font-normal"
@@ -154,7 +170,7 @@ export default function ChatInput({
         </div>
       </div>
       <div className="text-center mt-1.5 text-[11px] text-slate-500 font-normal">
-        AI responses may occasionally contain inaccuracies. Verify critical details.
+        Yash AI responses may occasionally contain inaccuracies. Verify critical details.
       </div>
     </div>
   );

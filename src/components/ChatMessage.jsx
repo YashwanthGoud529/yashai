@@ -10,7 +10,10 @@ import {
   Copy, 
   Check, 
   RotateCcw, 
-  Trash2
+  Trash2,
+  Pencil,
+  ArrowUpRight,
+  Play
 } from "lucide-react";
 
 function CodeBlock({ node, inline, className, children, ...props }) {
@@ -72,17 +75,29 @@ function CodeBlock({ node, inline, className, children, ...props }) {
 export default function ChatMessage({ 
   message, 
   onRegenerate, 
+  onRecall,
   onDelete, 
   isLastAI,
+  isLastUserWithoutAI,
+  onRetryUserPrompt,
   index 
 }) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.content);
 
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveEdit = () => {
+    if (editText.trim() && onRetryUserPrompt) {
+      setIsEditing(false);
+      onRetryUserPrompt(editText.trim(), index);
+    }
   };
 
   return (
@@ -125,10 +140,11 @@ export default function ChatMessage({
 
           {/* Action Buttons with 4px radius */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Copy button */}
             <button
               onClick={handleCopyMessage}
               className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-              title="Copy message"
+              title="Copy text"
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -137,16 +153,45 @@ export default function ChatMessage({
               )}
             </button>
 
-            {!isUser && isLastAI && onRegenerate && (
+            {/* User Message Recall & Edit Button */}
+            {isUser && onRecall && (
               <button
-                onClick={onRegenerate}
-                className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                title="Regenerate response"
+                onClick={() => onRecall(message.content)}
+                className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors font-normal"
+                title="Recall prompt into input composer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3 text-indigo-400" />
+                <span>Recall</span>
               </button>
             )}
 
+            {/* Inline Edit Prompt Button */}
+            {isUser && (
+              <button
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  setEditText(message.content);
+                }}
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                title="Edit & Resubmit prompt"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {/* AI Regenerate */}
+            {!isUser && isLastAI && onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors font-normal"
+                title="Regenerate response"
+              >
+                <RotateCcw className="w-3 h-3 text-indigo-400" />
+                <span>Regenerate</span>
+              </button>
+            )}
+
+            {/* Delete */}
             {onDelete && (
               <button
                 onClick={() => onDelete(index)}
@@ -159,18 +204,66 @@ export default function ChatMessage({
           </div>
         </div>
 
-        {/* Message Body */}
-        <div className="chat-prose text-slate-200">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              code: CodeBlock,
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
-        </div>
+        {/* Message Body or Inline Editor */}
+        {isEditing ? (
+          <div className="space-y-2 pt-1">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={3}
+              className="w-full bg-slate-950 border border-indigo-500 rounded-[4px] p-2.5 text-xs text-slate-100 outline-none leading-relaxed resize-none font-normal"
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-2.5 py-1 rounded-[4px] text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-normal"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex items-center gap-1 px-3 py-1 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all"
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>Save & Resubmit</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="chat-prose text-slate-200">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                code: CodeBlock,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Unanswered User Prompt Fallback / Retry Prompt Button */}
+        {isUser && isLastUserWithoutAI && onRetryUserPrompt && !isEditing && (
+          <div className="pt-2 flex items-center gap-2">
+            <button
+              onClick={() => onRetryUserPrompt(message.content, index)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/40 hover:border-indigo-500 text-indigo-300 hover:text-white text-xs font-semibold transition-all shadow-xs"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Retry Prompt with Yash AI</span>
+            </button>
+            {onRecall && (
+              <button
+                onClick={() => onRecall(message.content)}
+                className="px-2.5 py-1.5 rounded-[4px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-normal transition-colors"
+              >
+                Recall to Input
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

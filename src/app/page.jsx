@@ -29,6 +29,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [recalledPrompt, setRecalledPrompt] = useState("");
   
   // User settings (stored with secureStorage)
   const [apiKey, setApiKey] = useState("");
@@ -241,6 +242,96 @@ export default function Home() {
   const handleSaveSystemPrompt = (prompt) => {
     setSystemPrompt(prompt);
     secureStorage.setItem("gemini_system_prompt", prompt);
+  };
+
+  // Recall prompt into chat input
+  const handleRecallPrompt = (content) => {
+    setRecalledPrompt(content);
+  };
+
+  // Retry or Edit a specific prompt in history
+  const handleRetryUserPrompt = async (newText, messageIndex) => {
+    if (!newText.trim()) return;
+    setErrorMessage(null);
+
+    const targetConv = currentConversation;
+    if (!targetConv) return;
+
+    // Slice messages up to messageIndex
+    const sliced = targetConv.messages.slice(0, messageIndex);
+    const updatedUserMsg = {
+      role: "user",
+      content: newText,
+      timestamp: new Date().toISOString(),
+    };
+    const newMessages = [...sliced, updatedUserMsg];
+
+    const updatedConv = {
+      ...targetConv,
+      updatedAt: new Date().toISOString(),
+      messages: newMessages,
+    };
+
+    setConversations((prev) =>
+      prev.map((c) => (c.id === currentId ? updatedConv : c))
+    );
+    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(conversations));
+
+    setLoading(true);
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: abortControllerRef.current.signal,
+        body: JSON.stringify({
+          messages: newMessages,
+          model: selectedModel,
+          systemInstruction: systemPrompt,
+          customApiKey: apiKey,
+        }),
+      });
+
+      const responseText = await response.text();
+      let data = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error("Failed to parse JSON response:", responseText);
+      }
+
+      if (!response.ok || data.error) {
+        if (data.isKeyMissing || response.status === 401) {
+          setSettingsOpen(true);
+        }
+        throw new Error(data.error || `Request failed with status ${response.status}`);
+      }
+
+      const aiMessage = {
+        role: "assistant",
+        content: data.reply,
+        model: selectedModel,
+        timestamp: new Date().toISOString(),
+      };
+
+      const finalConv = {
+        ...updatedConv,
+        messages: [...newMessages, aiMessage],
+      };
+
+      setConversations((prev) =>
+        prev.map((c) => (c.id === currentId ? finalConv : c))
+      );
+      secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(conversations));
+      syncConversationToDb(finalConv);
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        setErrorMessage(err.message || "Failed to generate response.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Send Message
@@ -481,7 +572,7 @@ export default function Home() {
       {/* Main Chat Area */}
       <main className="flex-1 flex flex-col h-full min-w-0 bg-[#090a0f] relative overflow-hidden">
         
-        {/* Top Navigation Header — Clean, NO MongoDB badge */}
+        {/* Top Navigation Header */}
         <header className="h-12 border-b border-slate-800 px-3.5 flex items-center justify-between bg-[#0d1117] backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-2.5">
             <button
@@ -563,16 +654,24 @@ export default function Home() {
             <EmptyState onSelectPrompt={handleSendMessage} />
           ) : (
             <div className="max-w-4xl w-full mx-auto flex-1 divide-y divide-slate-800/40">
-              {messages.map((msg, idx) => (
-                <ChatMessage
-                  key={idx}
-                  index={idx}
-                  message={msg}
-                  onRegenerate={handleRegenerate}
-                  onDelete={handleDeleteMessage}
-                  isLastAI={idx === messages.length - 1 && msg.role === "assistant"}
-                />
-              ))}
+              {messages.map((msg, idx) => {
+                const isUser = msg.role === "user";
+                const isLastUserWithoutAI = isUser && idx === messages.length - 1 && !loading;
+
+                return (
+                  <ChatMessage
+                    key={idx}
+                    index={idx}
+                    message={msg}
+                    onRegenerate={handleRegenerate}
+                    onRecall={handleRecallPrompt}
+                    onDelete={handleDeleteMessage}
+                    onRetryUserPrompt={handleRetryUserPrompt}
+                    isLastAI={idx === messages.length - 1 && msg.role === "assistant"}
+                    isLastUserWithoutAI={isLastUserWithoutAI}
+                  />
+                );
+              })}
 
               {/* Thinking indicator */}
               {loading && (
@@ -619,6 +718,8 @@ export default function Home() {
             onStop={handleStopGeneration}
             modelName={selectedModel}
             disabled={false}
+            externalInput={recalledPrompt}
+            onClearExternalInput={() => setRecalledPrompt("")}
           />
         </div>
       </main>
