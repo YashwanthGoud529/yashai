@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import YashLogo from "./YashLogo";
 import { 
   Plus, 
@@ -13,8 +14,7 @@ import {
   Edit2,
   LogIn,
   LogOut,
-  User as UserIcon,
-  ShieldCheck
+  Sparkles
 } from "lucide-react";
 
 export default function Sidebar({
@@ -43,7 +43,7 @@ export default function Sidebar({
   const lastWeekStart = todayStart - 7 * 86400000;
 
   const filtered = conversations.filter((c) =>
-    c.title.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.title || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const groups = {
@@ -95,12 +95,17 @@ export default function Sidebar({
   return (
     <>
       {/* Mobile Backdrop */}
-      {isOpen && (
-        <div
-          onClick={onToggleOpen}
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden"
-        />
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onToggleOpen}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar Container */}
       <aside
@@ -130,8 +135,10 @@ export default function Sidebar({
             </button>
           </div>
 
-          {/* New Chat Button */}
-          <button
+          {/* New Chat Button (Shadcn + Motion style) */}
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               onNewChat();
               if (window.innerWidth < 768) onToggleOpen();
@@ -145,7 +152,7 @@ export default function Sidebar({
             <span className="text-[10px] bg-white/20 px-1 py-0.2 rounded-[2px] font-mono">
               +
             </span>
-          </button>
+          </motion.button>
 
           {/* Search Box */}
           {conversations.length > 0 && (
@@ -173,24 +180,28 @@ export default function Sidebar({
               if (items.length === 0) return null;
               return (
                 <div key={groupTitle} className="space-y-0.5">
-                  <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    {groupTitle}
+                  <div className="px-2 py-1 flex items-center justify-between text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span>{groupTitle}</span>
+                    <span className="text-slate-600 font-mono text-[9px]">{items.length}</span>
                   </div>
                   {items.map((conv) => {
                     const isSelected = conv.id === currentId;
                     const isEditing = editingId === conv.id;
 
                     return (
-                      <div
+                      <motion.div
                         key={conv.id}
+                        layout
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
                         onClick={() => {
                           onSelectChat(conv.id);
                           if (window.innerWidth < 768) onToggleOpen();
                         }}
                         className={`group relative flex items-center justify-between px-2.5 py-2 rounded-[4px] cursor-pointer text-xs transition-all ${
                           isSelected
-                            ? "bg-slate-800 text-white font-semibold shadow-xs border border-slate-700/60"
-                            : "text-slate-400 hover:bg-slate-900 hover:text-slate-200 font-normal"
+                            ? "bg-slate-800 text-white font-semibold shadow-xs border-l-2 border-l-indigo-500 border-y border-r border-slate-700/60"
+                            : "text-slate-400 hover:bg-slate-900 hover:text-slate-200 font-normal border-l-2 border-l-transparent"
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -257,7 +268,7 @@ export default function Sidebar({
                             </>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -303,7 +314,7 @@ export default function Sidebar({
           {user ? (
             <div className="flex items-center justify-between p-2 rounded-[4px] bg-slate-950 border border-slate-800 overflow-hidden">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-7 h-7 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-[11px] font-semibold shadow-xs shrink-0 overflow-hidden">
+                <div className="w-7 h-7 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-[11px] font-semibold shadow-xs shrink-0 overflow-hidden border border-indigo-500/20">
                   {user.avatar && user.avatar.startsWith("http") ? (
                     <img 
                       src={user.avatar} 
@@ -316,8 +327,11 @@ export default function Sidebar({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-white truncate leading-tight">
-                    {user.name || "User"}
+                  <div className="text-xs font-semibold text-white truncate leading-tight flex items-center gap-1">
+                    <span>{user.name || "User"}</span>
+                    {user.provider === "google" && (
+                      <span className="text-[9px] px-1 rounded-[2px] bg-blue-500/20 text-blue-300 font-mono">Google</span>
+                    )}
                   </div>
                   <div className="text-[10px] text-slate-500 truncate leading-tight font-normal">
                     {user.email}
@@ -333,13 +347,15 @@ export default function Sidebar({
               </button>
             </div>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onOpenAuth}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-semibold transition-all shadow-xs"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign In / Register</span>
-            </button>
+            </motion.button>
           )}
         </div>
       </aside>

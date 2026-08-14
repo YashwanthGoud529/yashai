@@ -1,19 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --background: #090a0f;
-  --foreground: #f1f5f9;
+@layer base {
+  * {
+    border-color: #1e293b;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #090a0f;
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+  }
 }
 
-body {
-  background-color: #090a0f;
-  color: #f1f5f9;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  overflow-x: hidden;
-  letter-spacing: -0.01em;
+/* Custom Kokonut / Shadcn inspired Glow & Beam Animations */
+@keyframes border-beam {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
 }
 
-/* Custom 4px modern scrollbars */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+.animate-float {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(13, 17, 23, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(22, 27, 34, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(30, 37, 48, 0.8);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 24px -8px rgba(79, 70, 229, 0.2);
+}
+
+/* Subtle Cyber Grid Background */
+.bg-cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -24,44 +108,38 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: #1e293b;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #334155;
 }
 
-/* Crisp Linear/Vercel modern aesthetic helpers */
-.glass-panel {
-  background: rgba(13, 17, 23, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+/* High-Contrast Code Syntax Styling */
+.chat-prose pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: transparent !important;
 }
 
-.glass-card {
-  background: rgba(22, 27, 34, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-}
-
-.glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(22, 27, 34, 0.85);
-}
-
-/* Markdown prose with 600 max font weight and 4px radius */
-.chat-prose {
-  line-height: 1.7;
-  font-size: 0.95rem;
+.chat-prose code.hljs {
+  padding: 0.875rem !important;
+  background: #0d1117 !important;
+  color: #e6edf3 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.6 !important;
 }
 
 .chat-prose p {
-  margin-bottom: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.65;
+}
+
+.chat-prose p:first-child {
+  margin-top: 0;
 }
 
 .chat-prose p:last-child {
@@ -69,75 +147,52 @@ body {
 }
 
 .chat-prose ul, .chat-prose ol {
-  margin-left: 1.25rem;
-  margin-bottom: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+  padding-left: 1.25rem;
 }
 
 .chat-prose li {
-  margin-bottom: 0.35rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+  line-height: 1.5;
 }
 
 .chat-prose h1, .chat-prose h2, .chat-prose h3, .chat-prose h4 {
   font-weight: 600;
-  color: #ffffff;
-  margin-top: 1.25rem;
-  margin-bottom: 0.6rem;
-  letter-spacing: -0.015em;
+  color: #f1f5f9;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
 }
 
-.chat-prose h1 { font-size: 1.3rem; }
-.chat-prose h2 { font-size: 1.15rem; }
-.chat-prose h3 { font-size: 1.02rem; }
-
-.chat-prose code:not(pre code) {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.15rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  color: #a5b4fc;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+.chat-prose blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: #94a3b8;
+  font-style: italic;
 }
 
-/* Pure flat seamless code styling — NO gray overlays */
-.chat-prose pre {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
-  background-color: transparent !important;
-  padding: 0 !important;
-}
-
-.hljs {
-  background: transparent !important;
-  padding: 0 !important;
+.chat-prose a {
+  color: #818cf8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .chat-prose table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.875rem;
-  border-radius: 4px;
-  overflow: hidden;
+  margin: 0.75rem 0;
+  font-size: 0.8125rem;
 }
 
 .chat-prose th, .chat-prose td {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 0.75rem;
-  text-align: left;
+  border: 1px solid #1e293b;
+  padding: 0.4rem 0.6rem;
 }
 
 .chat-prose th {
-  background: rgba(255, 255, 255, 0.06);
+  background: #161b22;
   font-weight: 600;
-}
-
-.chat-prose blockquote {
-  border-left: 3px solid #6366f1;
-  padding-left: 1rem;
-  margin-left: 0;
-  margin-right: 0;
-  color: #94a3b8;
-  font-style: italic;
+  text-align: left;
 }

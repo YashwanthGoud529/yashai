@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import confetti from "canvas-confetti";
 import YashLogo from "./YashLogo";
 import { 
   User, 
@@ -13,19 +15,34 @@ import {
   Trash2, 
   Pencil, 
   Play,
-  RotateCw
+  RotateCw,
+  Sparkles
 } from "lucide-react";
 
-// Flat, high-contrast code block with 0 overlay
+// Flat, high-contrast code block with 0 overlay and 1-click copy confetti
 function CodeBlock({ node, inline, className, children, ...props }) {
   const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
   const language = match ? match[1] : "";
   const codeString = String(children).replace(/\n$/, "");
 
-  const handleCopy = () => {
+  const handleCopy = (e) => {
     navigator.clipboard.writeText(codeString);
     setCopied(true);
+
+    try {
+      const rect = e.target.getBoundingClientRect();
+      confetti({
+        particleCount: 20,
+        spread: 45,
+        origin: {
+          x: rect.left / window.innerWidth,
+          y: rect.top / window.innerHeight,
+        },
+        colors: ["#6366f1", "#a855f7", "#38bdf8"],
+      });
+    } catch (err) {}
+
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -38,7 +55,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
   }
 
   return (
-    <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden">
+    <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden shadow-md">
       {/* Code Header */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-slate-800 text-xs">
         <span className="text-slate-400 font-mono text-[11px] uppercase tracking-wider font-semibold">
@@ -47,7 +64,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded-[4px] hover:bg-slate-850 transition-colors"
+          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded-[4px] hover:bg-slate-800 transition-colors"
         >
           {copied ? (
             <>
@@ -103,7 +120,10 @@ export default function ChatMessage({
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className={`group relative flex gap-3.5 p-4 md:p-5 transition-colors ${
         isUser
           ? "bg-transparent"
@@ -113,7 +133,7 @@ export default function ChatMessage({
       {/* Avatar */}
       <div className="shrink-0 pt-0.5">
         {isUser ? (
-          <div className="w-7 h-7 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+          <div className="w-7 h-7 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xs">
             <User className="w-4 h-4" />
           </div>
         ) : (
@@ -252,7 +272,7 @@ export default function ChatMessage({
               </div>
             ) : null}
 
-            {/* Live Streaming Animated Pulse Indicator */}
+            {/* Live Streaming Animated Pulse Cursor */}
             {message.isStreaming && message.content && (
               <span className="inline-block w-2 h-3.5 ml-1 bg-indigo-400 animate-pulse rounded-[1px] align-middle shadow-xs shadow-indigo-500" />
             )}
@@ -280,6 +300,6 @@ export default function ChatMessage({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
