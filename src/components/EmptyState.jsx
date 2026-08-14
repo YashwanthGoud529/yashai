@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Code, Lightbulb, PenTool, GraduationCap, Zap, ArrowUpRight } from "lucide-react";
+import YashLogo from "./YashLogo";
+import { Code, Lightbulb, PenTool, GraduationCap, Zap, ArrowUpRight } from "lucide-react";
 
 const PROMPT_STARTERS = [
   {
@@ -36,18 +37,16 @@ const PROMPT_STARTERS = [
 export default function EmptyState({ onSelectPrompt }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 max-w-4xl mx-auto w-full text-center">
-      {/* Modern minimal emblem with 4px radius */}
+      {/* Modern Yash AI Emblem */}
       <div className="relative mb-5">
-        <div className="w-12 h-12 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/15 mx-auto">
-          <Sparkles className="w-6 h-6 text-white" />
-        </div>
+        <YashLogo size={56} className="shadow-lg shadow-indigo-500/20 ring-1 ring-white/15 mx-auto" />
       </div>
 
       <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-white mb-2.5">
-        How can I help you today?
+        How can <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Yash AI</span> assist you today?
       </h1>
       <p className="text-slate-400 text-xs md:text-sm max-w-md mb-7 leading-relaxed font-normal">
-        Powered by Google Gemini. Ask code questions, brainstorm startup ideas, generate content, or explore complex topics.
+        Your intelligent pair programmer and creative AI assistant. Build code, brainstorm ideas, write content, and solve complex problems.
       </p>
 
       {/* Grid of Prompt Starters with 4px radius */}
@@ -83,7 +82,7 @@ export default function EmptyState({ onSelectPrompt }) {
 
       <div className="mt-7 flex items-center gap-1.5 text-xs text-slate-500 font-normal">
         <Zap className="w-3.5 h-3.5 text-amber-400" />
-        <span>Gemini Flash • Multi-turn memory • Markdown & Code rendering</span>
+        <span>Yash AI Engine • Context-aware memory • Real-time Markdown & Code</span>
       </div>
     </div>
   );

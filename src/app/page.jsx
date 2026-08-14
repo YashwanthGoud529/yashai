@@ -6,6 +6,9 @@ import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
 import EmptyState from "../components/EmptyState";
 import SettingsModal from "../components/SettingsModal";
+import AuthModal from "../components/AuthModal";
+import YashLogo from "../components/YashLogo";
+import { secureStorage } from "../lib/secureStorage";
 import { 
   Menu, 
   Sparkles, 
@@ -15,18 +18,19 @@ import {
   SlidersHorizontal,
   Plus,
   AlertCircle,
-  Database
+  LogIn
 } from "lucide-react";
 
 export default function Home() {
+  const [user, setUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [dbConnected, setDbConnected] = useState(false);
   
-  // User settings
+  // User settings (stored with secureStorage)
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-flash-latest");
   const [systemPrompt, setSystemPrompt] = useState("");
@@ -35,70 +39,111 @@ export default function Home() {
   const messagesEndRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Load conversations from MongoDB on mount (fallback to localStorage)
+  // Fetch active user session
+  const fetchUserSession = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+          return data.user;
+        }
+      }
+    } catch (e) {
+      console.warn("Session check notice:", e);
+    }
+    return null;
+  };
+
+  // Fetch conversations for the current user
+  const fetchUserConversations = async () => {
+    try {
+      const res = await fetch("/api/conversations");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.conversations && data.conversations.length > 0) {
+          setConversations(data.conversations);
+          setCurrentId(data.conversations[0].id);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Fetch conversations notice:", err);
+    }
+
+    // Secure local storage fallback
+    try {
+      const savedChats = secureStorage.getItem("yash_ai_chats_v1");
+      if (savedChats) {
+        const parsed = JSON.parse(savedChats);
+        setConversations(parsed);
+        if (parsed.length > 0) {
+          setCurrentId(parsed[0].id);
+        }
+      } else {
+        setConversations([]);
+        setCurrentId(null);
+      }
+    } catch (e) {
+      console.error("Secure storage notice:", e);
+    }
+  };
+
+  // Initialize data on mount
   useEffect(() => {
     const initData = async () => {
       try {
-        const savedKey = localStorage.getItem("gemini_custom_api_key");
+        const savedKey = secureStorage.getItem("gemini_custom_api_key");
         if (savedKey) setApiKey(savedKey);
 
-        const savedModel = localStorage.getItem("gemini_selected_model");
+        const savedModel = secureStorage.getItem("gemini_selected_model");
         if (savedModel) setSelectedModel(savedModel);
 
-        const savedSysPrompt = localStorage.getItem("gemini_system_prompt");
+        const savedSysPrompt = secureStorage.getItem("gemini_system_prompt");
         if (savedSysPrompt) setSystemPrompt(savedSysPrompt);
 
-        // Fetch from MongoDB
-        const res = await fetch("/api/conversations");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.conversations && data.conversations.length > 0) {
-            setConversations(data.conversations);
-            setCurrentId(data.conversations[0].id);
-            setDbConnected(!data.isOffline);
-            return;
-          }
-        }
+        await fetchUserSession();
+        await fetchUserConversations();
       } catch (err) {
-        console.warn("Initial fetch notice:", err);
-      }
-
-      // Local storage fallback
-      try {
-        const savedChats = localStorage.getItem("gemini_ai_chats_v1");
-        if (savedChats) {
-          const parsed = JSON.parse(savedChats);
-          setConversations(parsed);
-          if (parsed.length > 0) {
-            setCurrentId(parsed[0].id);
-          }
-        }
-      } catch (e) {
-        console.error("Local storage notice:", e);
+        console.warn("Init notice:", err);
       }
     };
 
     initData();
   }, []);
 
-  // Save to MongoDB and localStorage helper
+  // Handle Authentication Success
+  const handleAuthSuccess = async (authenticatedUser) => {
+    setUser(authenticatedUser);
+    await fetchUserConversations();
+  };
+
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setUser(null);
+      await fetchUserConversations();
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+  };
+
+  // Sync conversation to database & secure local storage
   const syncConversationToDb = async (conversation) => {
     try {
-      const res = await fetch("/api/conversations", {
+      await fetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(conversation),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setDbConnected(!data.isOffline);
-      }
     } catch (e) {
       console.warn("DB sync notice:", e);
     }
   };
 
-  // Scroll to bottom when messages update
+  // Scroll to bottom
   const scrollToBottom = (behavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   };
@@ -136,7 +181,7 @@ export default function Home() {
   const handleDeleteChat = async (id) => {
     const filtered = conversations.filter((c) => c.id !== id);
     setConversations(filtered);
-    localStorage.setItem("gemini_ai_chats_v1", JSON.stringify(filtered));
+    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(filtered));
     if (currentId === id) {
       setCurrentId(filtered.length > 0 ? filtered[0].id : null);
     }
@@ -170,7 +215,7 @@ export default function Home() {
     if (confirm("Are you sure you want to delete all chat history?")) {
       setConversations([]);
       setCurrentId(null);
-      localStorage.removeItem("gemini_ai_chats_v1");
+      secureStorage.removeItem("yash_ai_chats_v1");
 
       try {
         await fetch("/api/conversations", { method: "DELETE" });
@@ -180,22 +225,22 @@ export default function Home() {
     }
   };
 
-  // Save API Key
+  // Save API Key securely
   const handleSaveApiKey = (key) => {
     setApiKey(key);
-    localStorage.setItem("gemini_custom_api_key", key);
+    secureStorage.setItem("gemini_custom_api_key", key);
   };
 
-  // Save Model
+  // Save Model securely
   const handleSelectModel = (model) => {
     setSelectedModel(model);
-    localStorage.setItem("gemini_selected_model", model);
+    secureStorage.setItem("gemini_selected_model", model);
   };
 
-  // Save System Prompt
+  // Save System Prompt securely
   const handleSaveSystemPrompt = (prompt) => {
     setSystemPrompt(prompt);
-    localStorage.setItem("gemini_system_prompt", prompt);
+    secureStorage.setItem("gemini_system_prompt", prompt);
   };
 
   // Send Message
@@ -206,7 +251,6 @@ export default function Home() {
     let activeChatId = currentId;
     let currentMsgs = messages;
 
-    // If no chat exists yet, create one
     if (!activeChatId || !currentConversation) {
       activeChatId = Date.now().toString();
       const newChat = {
@@ -241,9 +285,12 @@ export default function Home() {
       messages: updatedMessages,
     };
 
-    setConversations((prev) =>
-      prev.map((c) => (c.id === activeChatId ? updatedConv : c))
-    );
+    const updatedList = conversations.map((c) => (c.id === activeChatId ? updatedConv : c));
+    if (!conversations.some((c) => c.id === activeChatId)) {
+      updatedList.unshift(updatedConv);
+    }
+    setConversations(updatedList);
+    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(updatedList));
 
     syncConversationToDb(updatedConv);
 
@@ -292,9 +339,9 @@ export default function Home() {
         messages: [...updatedMessages, aiMessage],
       };
 
-      setConversations((prev) =>
-        prev.map((c) => (c.id === activeChatId ? finalConv : c))
-      );
+      const finalList = updatedList.map((c) => (c.id === activeChatId ? finalConv : c));
+      setConversations(finalList);
+      secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(finalList));
 
       syncConversationToDb(finalConv);
     } catch (err) {
@@ -413,7 +460,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-[#090a0f] text-slate-100 overflow-hidden font-sans">
-      {/* Sidebar with 4px borders */}
+      {/* Sidebar with Yash AI branding & Auth */}
       <Sidebar
         conversations={conversations}
         currentId={currentId}
@@ -423,6 +470,9 @@ export default function Home() {
         onRenameChat={handleRenameChat}
         onClearAllChats={handleClearAllChats}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAuth={() => setAuthOpen(true)}
+        user={user}
+        onLogout={handleLogout}
         hasApiKey={Boolean(apiKey)}
         isOpen={sidebarOpen}
         onToggleOpen={() => setSidebarOpen(!sidebarOpen)}
@@ -431,7 +481,7 @@ export default function Home() {
       {/* Main Chat Area */}
       <main className="flex-1 flex flex-col h-full min-w-0 bg-[#090a0f] relative overflow-hidden">
         
-        {/* Top Navigation Header */}
+        {/* Top Navigation Header — Clean, NO MongoDB badge */}
         <header className="h-12 border-b border-slate-800 px-3.5 flex items-center justify-between bg-[#0d1117] backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-2.5">
             <button
@@ -443,23 +493,17 @@ export default function Home() {
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-xs md:hidden">
-                <Sparkles className="w-3 h-3 text-white" />
+              <div className="md:hidden">
+                <YashLogo size={22} />
               </div>
               <span className="font-semibold text-xs text-slate-200 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
-                {currentConversation?.title || "Gemini AI Chat"}
+                {currentConversation?.title || "Yash AI Chat"}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {/* MongoDB status badge */}
-            <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-emerald-950/30 border border-emerald-800/40 text-emerald-400 text-[11px] font-mono font-semibold">
-              <Database className="w-3 h-3 text-emerald-400" />
-              <span>MongoDB Connected</span>
-            </div>
-
-            {/* Model Badge with 4px radius */}
+          <div className="flex items-center gap-2">
+            {/* Model Badge */}
             <button
               onClick={() => setSettingsOpen(true)}
               className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-[4px] bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs text-slate-300 font-mono transition-colors font-semibold"
@@ -467,6 +511,31 @@ export default function Home() {
               <Sparkles className="w-3 h-3 text-indigo-400" />
               <span>{selectedModel}</span>
             </button>
+
+            {/* User Account / Sign In */}
+            {user ? (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:bg-indigo-600/25 transition-colors"
+              >
+                <span className="w-4 h-4 rounded-[2px] bg-indigo-600 text-[10px] text-white flex items-center justify-center font-bold">
+                  {user.avatar?.startsWith("http") ? (
+                    <img src={user.avatar} alt="" className="w-full h-full rounded-[2px] object-cover" />
+                  ) : (
+                    user.avatar || user.name?.slice(0, 1).toUpperCase()
+                  )}
+                </span>
+                <span className="hidden lg:inline-block truncate max-w-[90px]">{user.name}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setAuthOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-xs"
+              >
+                <LogIn className="w-3 h-3" />
+                <span>Sign In</span>
+              </button>
+            )}
 
             {/* Quick New Chat */}
             <button
@@ -505,14 +574,12 @@ export default function Home() {
                 />
               ))}
 
-              {/* Thinking indicator with 4px radius */}
+              {/* Thinking indicator */}
               {loading && (
                 <div className="flex gap-3.5 p-4 md:p-5 bg-slate-900/40 border-y border-slate-800/40">
-                  <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                    <Sparkles className="w-4 h-4 animate-spin text-cyan-200" />
-                  </div>
+                  <YashLogo size={28} />
                   <div className="flex-1 flex items-center gap-2 text-slate-400 text-xs">
-                    <span className="font-semibold text-slate-300">Gemini is thinking</span>
+                    <span className="font-semibold text-slate-300">Yash AI is generating</span>
                     <div className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -522,7 +589,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Error banner with 4px radius */}
+              {/* Error banner */}
               {errorMessage && (
                 <div className="m-3.5 p-3.5 rounded-[4px] bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -568,6 +635,13 @@ export default function Home() {
         onSaveSystemPrompt={handleSaveSystemPrompt}
         currentChat={currentConversation}
         allChats={conversations}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
       />
     </div>
   );

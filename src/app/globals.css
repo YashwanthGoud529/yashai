@@ -98,11 +98,18 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* Pure flat seamless code styling — NO gray overlays */
 .chat-prose pre {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
   border-radius: 4px;
-  overflow: hidden;
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
 }
 
 .chat-prose table {

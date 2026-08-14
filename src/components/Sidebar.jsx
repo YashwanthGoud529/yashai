@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import YashLogo from "./YashLogo";
 import { 
   Plus, 
   MessageSquare, 
   Trash2, 
   Settings, 
   Search, 
-  Sparkles, 
   Check, 
-  X,
-  Edit2
+  X, 
+  Edit2,
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  ShieldCheck
 } from "lucide-react";
 
 export default function Sidebar({
@@ -22,6 +26,9 @@ export default function Sidebar({
   onRenameChat,
   onClearAllChats,
   onOpenSettings,
+  onOpenAuth,
+  user,
+  onLogout,
   hasApiKey,
   isOpen,
   onToggleOpen,
@@ -83,7 +90,7 @@ export default function Sidebar({
         />
       )}
 
-      {/* Sidebar Container with 4px border radius aesthetic */}
+      {/* Sidebar Container */}
       <aside
         className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col w-64 md:w-72 bg-[#0d1117] border-r border-slate-800 transition-transform duration-200 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -92,15 +99,13 @@ export default function Sidebar({
         {/* Top Header & New Chat */}
         <div className="p-3.5 space-y-2.5 border-b border-slate-800">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <YashLogo size={24} />
               <div>
                 <h2 className="font-semibold text-xs text-white tracking-tight leading-none">
-                  Gemini Chat
+                  Yash AI
                 </h2>
-                <span className="text-[10px] text-slate-400 font-normal">AI Assistant</span>
+                <span className="text-[10px] text-slate-400 font-normal">Next-Gen Intelligence</span>
               </div>
             </div>
 
@@ -249,7 +254,7 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer: User Profile / Auth & Settings */}
         <div className="p-2.5 border-t border-slate-800 bg-[#0d1117] space-y-1.5">
           {conversations.length > 0 && (
             <button
@@ -261,7 +266,7 @@ export default function Sidebar({
             </button>
           )}
 
-          {/* Settings & API Key trigger */}
+          {/* Settings Trigger */}
           <button
             onClick={onOpenSettings}
             className="w-full flex items-center justify-between px-2.5 py-2 rounded-[4px] bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-xs text-slate-300 transition-colors font-normal"
@@ -281,6 +286,40 @@ export default function Sidebar({
               </span>
             )}
           </button>
+
+          {/* User Account / Login Block */}
+          {user ? (
+            <div className="flex items-center justify-between p-2 rounded-[4px] bg-slate-950 border border-slate-800">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="w-6 h-6 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-[11px] font-semibold shadow-xs shrink-0">
+                  {user.avatar || user.name?.slice(0, 2).toUpperCase() || "U"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-white truncate leading-tight">
+                    {user.name}
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate leading-tight font-normal">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors ml-1"
+                title="Log out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-semibold transition-all shadow-xs"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In / Register</span>
+            </button>
+          )}
         </div>
       </aside>
     </>

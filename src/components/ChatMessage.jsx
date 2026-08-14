@@ -4,13 +4,12 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import YashLogo from "./YashLogo";
 import { 
-  Bot, 
   User, 
   Copy, 
   Check, 
   RotateCcw, 
-  Sparkles,
   Trash2
 } from "lucide-react";
 
@@ -28,14 +27,15 @@ function CodeBlock({ node, inline, className, children, ...props }) {
 
   if (!inline && match) {
     return (
-      <div className="my-3.5 rounded-[4px] overflow-hidden border border-slate-700/60 bg-slate-950/90 shadow-md">
-        <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-400 font-mono">
+      <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden">
+        {/* Sleek Minimal Header */}
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-slate-800 text-xs font-mono">
           <span className="uppercase font-semibold text-indigo-400 tracking-wider text-[11px]">
             {language}
           </span>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all text-xs border border-slate-700"
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all text-xs border border-slate-700/80 font-sans"
             title="Copy code"
           >
             {copied ? (
@@ -51,7 +51,9 @@ function CodeBlock({ node, inline, className, children, ...props }) {
             )}
           </button>
         </div>
-        <div className="p-3.5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed text-slate-200">
+
+        {/* Code Content — completely flat without weird overlays */}
+        <div className="p-3.5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed text-slate-100 bg-[#0d1117]">
           <code className={className} {...props}>
             {children}
           </code>
@@ -88,19 +90,17 @@ export default function ChatMessage({
       className={`group relative flex gap-3.5 p-4 md:p-5 transition-colors ${
         isUser
           ? "bg-transparent"
-          : "bg-slate-900/40 border-y border-slate-800/40 backdrop-blur-xs"
+          : "bg-slate-900/30 border-y border-slate-800/40"
       }`}
     >
-      {/* Avatar with 4px radius */}
-      <div className="shrink-0">
+      {/* Avatar */}
+      <div className="shrink-0 pt-0.5">
         {isUser ? (
-          <div className="w-7 h-7 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+          <div className="w-7 h-7 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-xs">
             <User className="w-4 h-4" />
           </div>
         ) : (
-          <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm ring-1 ring-white/10">
-            <Sparkles className="w-4 h-4 text-cyan-200" />
-          </div>
+          <YashLogo size={28} />
         )}
       </div>
 
@@ -109,15 +109,15 @@ export default function ChatMessage({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-xs text-slate-200">
-              {isUser ? "You" : "Gemini AI"}
+              {isUser ? "You" : "Yash AI"}
             </span>
             {message.timestamp && (
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 font-normal">
                 {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
             {!isUser && message.model && (
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded-[2px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
                 {message.model}
               </span>
             )}

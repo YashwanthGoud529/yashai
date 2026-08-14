@@ -28,6 +28,11 @@ const ConversationSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    userId: {
+      type: String,
+      default: "guest",
+      index: true,
+    },
     title: {
       type: String,
       default: "New Conversation",
@@ -39,6 +44,5 @@ const ConversationSchema = new mongoose.Schema(
   }
 );
 
-// Prevent mongoose model overwrite error during hot reloading
 export default mongoose.models.Conversation ||
   mongoose.model("Conversation", ConversationSchema);
