@@ -58,7 +58,6 @@ export default function Home() {
 
   // Fetch conversations strictly for authenticated user from MongoDB Atlas
   const fetchUserConversations = async (currentUser) => {
-    // If not logged in, show 0 history (Privacy protection)
     if (!currentUser) {
       setConversations([]);
       setCurrentId(null);
@@ -112,7 +111,7 @@ export default function Home() {
     await fetchUserConversations(authenticatedUser);
   };
 
-  // Handle Logout (Completely clears active history and cached state)
+  // Handle Logout
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -127,7 +126,7 @@ export default function Home() {
 
   // Sync conversation directly to MongoDB Atlas
   const syncConversationToDb = async (conversation) => {
-    if (!user) return; // Don't persist guest conversations to shared pool
+    if (!user) return;
     try {
       await fetch("/api/conversations", {
         method: "POST",
@@ -249,12 +248,12 @@ export default function Home() {
     setRecalledPrompt(content);
   };
 
-  // Stream Step-by-Step Response Reader
+  // Smooth Typewriter Stream Reader (Paced character-by-character / word-by-word)
   const streamAIResponse = async (chatMessages, targetChatId, chatTitle) => {
     setLoading(true);
     abortControllerRef.current = new AbortController();
 
-    // 1. Append placeholder streaming AI message
+    // 1. Initial streaming placeholder
     const initialAIMessage = {
       role: "assistant",
       content: "",
@@ -304,41 +303,80 @@ export default function Home() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-      let accumulatedText = "";
 
+      let fullBuffer = "";
+      let displayedLength = 0;
+      let streamEnded = false;
+      let isAborted = false;
+
+      // Pacer loop: smoothly renders characters at a pleasing, continuous human pace
+      const pacerPromise = new Promise((resolve) => {
+        const tick = () => {
+          if (isAborted) {
+            resolve();
+            return;
+          }
+
+          if (displayedLength < fullBuffer.length) {
+            const remaining = fullBuffer.length - displayedLength;
+            // Adaptive step: 1-2 chars if close, 3-5 chars if buffer is backed up
+            const step = remaining > 100 ? 6 : remaining > 30 ? 3 : 1;
+            displayedLength = Math.min(displayedLength + step, fullBuffer.length);
+            const currentSlice = fullBuffer.slice(0, displayedLength);
+
+            setConversations((prev) =>
+              prev.map((c) => {
+                if (c.id !== targetChatId) return c;
+                const updatedMsgs = [...c.messages];
+                if (updatedMsgs[aiMessageIndex]) {
+                  updatedMsgs[aiMessageIndex] = {
+                    ...updatedMsgs[aiMessageIndex],
+                    content: currentSlice,
+                    isStreaming: true,
+                  };
+                }
+                return {
+                  ...c,
+                  updatedAt: new Date().toISOString(),
+                  messages: updatedMsgs,
+                };
+              })
+            );
+            scrollToBottom("smooth");
+
+            // Smooth typing interval (12ms)
+            setTimeout(tick, 12);
+          } else if (!streamEnded) {
+            // Wait for more chunks to arrive from network
+            setTimeout(tick, 20);
+          } else {
+            // Buffer completely drained and network finished
+            resolve();
+          }
+        };
+
+        tick();
+      });
+
+      // Network reader loop
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
+        if (done) {
+          streamEnded = true;
+          break;
+        }
 
         const chunk = decoder.decode(value, { stream: true });
-        accumulatedText += chunk;
-
-        // Update active message in real-time step by step
-        setConversations((prev) =>
-          prev.map((c) => {
-            if (c.id !== targetChatId) return c;
-            const updatedMsgs = [...c.messages];
-            if (updatedMsgs[aiMessageIndex]) {
-              updatedMsgs[aiMessageIndex] = {
-                ...updatedMsgs[aiMessageIndex],
-                content: accumulatedText,
-                isStreaming: true,
-              };
-            }
-            return {
-              ...c,
-              updatedAt: new Date().toISOString(),
-              messages: updatedMsgs,
-            };
-          })
-        );
-        scrollToBottom("smooth");
+        fullBuffer += chunk;
       }
+
+      // Wait for pacer to smoothly type all remaining text
+      await pacerPromise;
 
       // Finalize completed message
       const finalAIMessage = {
         role: "assistant",
-        content: accumulatedText || "Response complete.",
+        content: fullBuffer || "Response complete.",
         model: selectedModel,
         timestamp: new Date().toISOString(),
         isStreaming: false,
@@ -358,14 +396,14 @@ export default function Home() {
       syncConversationToDb(finalConv);
     } catch (err) {
       if (err.name !== "AbortError") {
-        setErrorMessage(err.message || "Failed to generate step-by-step response.");
+        setErrorMessage(err.message || "Failed to generate smooth response.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Send Message with Real-Time Step-by-Step Streaming
+  // Send Message with Smooth Typewriter Streaming
   const handleSendMessage = async (userText) => {
     if (!userText.trim() || loading) return;
     setErrorMessage(null);
