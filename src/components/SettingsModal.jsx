@@ -45,7 +45,7 @@ export default function SettingsModal({
   onClose,
   apiKey = "",
   onSaveApiKey,
-  selectedModel = "gemini-flash-latest",
+  selectedModel = "gemini-flash-lite-latest",
   onSelectModel,
   systemPrompt = "",
   onSaveSystemPrompt,
@@ -55,14 +55,14 @@ export default function SettingsModal({
   const [activeTab, setActiveTab] = useState("model");
   const [keyInput, setKeyInput] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [model, setModel] = useState("gemini-flash-latest");
+  const [model, setModel] = useState("gemini-flash-lite-latest");
   const [sysPrompt, setSysPrompt] = useState("");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setKeyInput(apiKey || "");
-      setModel(selectedModel || "gemini-flash-latest");
+      setModel(selectedModel || "gemini-flash-lite-latest");
       setSysPrompt(systemPrompt || "");
       setSavedSuccess(false);
     }
@@ -193,22 +193,28 @@ export default function SettingsModal({
               <div className="grid grid-cols-1 gap-2">
                 {[
                   {
-                    id: "gemini-flash-latest",
-                    title: "Gemini Flash Latest (Recommended)",
-                    desc: "Ultra-fast response streaming with latest reasoning optimizations.",
-                    badge: "Fastest",
+                    id: "gemini-flash-lite-latest",
+                    title: "Gemini Flash Lite (Recommended)",
+                    desc: "Ultra-fast response streaming with highest active throughput quota.",
+                    badge: "Fastest & High Quota",
                   },
                   {
-                    id: "gemini-3.7-flash",
-                    title: "Gemini 3.7 Flash",
-                    desc: "Next-gen hybrid reasoning with deep multi-turn context.",
+                    id: "gemini-3.6-flash",
+                    title: "Gemini 3.6 Flash",
+                    desc: "Next-gen reasoning engine for complex coding and system design.",
                     badge: "Advanced",
                   },
                   {
-                    id: "gemini-3.5-flash",
-                    title: "Gemini 3.5 Flash",
-                    desc: "High throughput balance for large documents and code generation.",
-                    badge: "Balanced",
+                    id: "gemini-3.5-flash-lite",
+                    title: "Gemini 3.5 Flash Lite",
+                    desc: "Ultra low-latency balanced model for instant answers.",
+                    badge: "Low Latency",
+                  },
+                  {
+                    id: "gemma-4-31b-it",
+                    title: "Gemma 4 31B IT",
+                    desc: "High capacity multi-turn instruction fine-tuned engine.",
+                    badge: "High Capacity",
                   },
                 ].map((m) => {
                   const isSelected = model === m.id;

@@ -1,5 +1,4 @@
 import { GoogleGenAI } from "@google/genai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -14,7 +13,7 @@ export async function POST(request) {
       );
     }
 
-    const { messages, model = "gemini-flash-latest", systemInstruction, customApiKey } = body;
+    const { messages, model = "gemini-flash-lite-latest", systemInstruction, customApiKey } = body;
 
     const apiKey = (customApiKey || process.env.GEMINI_API_KEY || "").trim();
 
@@ -57,23 +56,27 @@ export async function POST(request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Preferred models for instant response
-    const requestedModel = model || "gemini-flash-latest";
+    // Active models with confirmed quota
+    const requestedModel = model || "gemini-flash-lite-latest";
     const modelsToTry = [
       requestedModel,
+      "gemini-flash-lite-latest",
+      "gemini-3.5-flash-lite",
+      "gemini-3.6-flash",
+      "gemini-3.1-flash-lite",
+      "gemma-4-31b-it",
       "gemini-flash-latest",
       "gemini-3.5-flash",
-      "gemini-3.7-flash",
+      "gemini-3.7-flash"
     ].filter((v, i, a) => a.indexOf(v) === i);
 
-    // Create ReadableStream for real-time token streaming
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
         let streamSuccess = false;
 
-        // 1. Try GoogleGenAI SDK streaming
+        // Try streaming across active quota models
         for (const m of modelsToTry) {
           try {
             const responseStream = await ai.models.generateContentStream({
@@ -92,34 +95,35 @@ export async function POST(request) {
 
             if (streamSuccess) break;
           } catch (err) {
-            console.warn(`Streaming attempt for model ${m} notice:`, err.message);
+            console.warn(`Model ${m} notice:`, err.message);
           }
         }
 
-        // 2. Fallback streaming with @google/generative-ai
+        // Non-streaming fallback if stream was interrupted
         if (!streamSuccess) {
-          try {
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const lastPrompt = validMessages[validMessages.length - 1].content;
-            const resultStream = await fallbackModel.generateContentStream(lastPrompt);
+          for (const m of modelsToTry) {
+            try {
+              const staticRes = await ai.models.generateContent({
+                model: m,
+                contents: formattedContents,
+                config,
+              });
 
-            for await (const chunk of resultStream.stream) {
-              const text = chunk.text();
-              if (text) {
-                controller.enqueue(encoder.encode(text));
+              if (staticRes && staticRes.text) {
+                controller.enqueue(encoder.encode(staticRes.text));
                 streamSuccess = true;
+                break;
               }
+            } catch (e2) {
+              console.warn(`Static fallback notice on ${m}:`, e2.message);
             }
-          } catch (e2) {
-            console.warn("Fallback streaming notice:", e2.message);
           }
         }
 
         if (!streamSuccess) {
           controller.enqueue(
             encoder.encode(
-              "I apologize, but the response could not be generated at this moment. Please check your API rate limits or try again in a few seconds."
+              "I apologize, but all free-tier API quotas are temporarily busy. Please wait 15 seconds or provide your own Gemini API key in Settings (⚙️)."
             )
           );
         }

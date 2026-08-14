@@ -30,7 +30,7 @@ export default function Home() {
   
   // User settings
   const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gemini-flash-latest");
+  const [selectedModel, setSelectedModel] = useState("gemini-flash-lite-latest");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
 
