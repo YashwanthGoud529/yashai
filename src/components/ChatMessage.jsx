@@ -39,7 +39,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
           x: rect.left / window.innerWidth,
           y: rect.top / window.innerHeight,
         },
-        colors: ["#6366f1", "#a855f7", "#38bdf8"],
+        colors: ["#3e55af", "#024dbe", "#60a5fa"],
       });
     } catch (err) {}
 
@@ -48,7 +48,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
 
   if (inline) {
     return (
-      <code className="bg-slate-900 text-indigo-300 font-mono text-[11px] px-1.5 py-0.5 rounded-[4px] border border-slate-800" {...props}>
+      <code className="bg-slate-900 text-blue-300 font-mono text-[11px] px-1.5 py-0.5 rounded-[4px] border border-[#3e55af]/40" {...props}>
         {children}
       </code>
     );
@@ -133,7 +133,7 @@ export default function ChatMessage({
       {/* Avatar */}
       <div className="shrink-0 pt-0.5">
         {isUser ? (
-          <div className="w-7 h-7 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xs">
+          <div className="w-7 h-7 rounded-[4px] bg-brand flex items-center justify-center text-white shadow-xs border border-[#3e55af]/50">
             <User className="w-4 h-4" />
           </div>
         ) : (
@@ -154,7 +154,7 @@ export default function ChatMessage({
               </span>
             )}
             {!isUser && message.model && (
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded-[2px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded-[2px] bg-[#3e55af]/15 text-blue-300 border border-[#3e55af]/30 font-semibold">
                 {message.model}
               </span>
             )}
@@ -179,10 +179,10 @@ export default function ChatMessage({
             {isUser && onRecall && (
               <button
                 onClick={() => onRecall(message.content)}
-                className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors font-normal"
+                className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-blue-300 hover:bg-slate-800 transition-colors font-normal"
                 title="Recall this prompt to input composer"
               >
-                <RotateCw className="w-3 h-3 text-indigo-400" />
+                <RotateCw className="w-3 h-3 text-blue-400" />
                 <span>Recall</span>
               </button>
             )}
@@ -205,7 +205,7 @@ export default function ChatMessage({
             {!isUser && isLastAI && onRegenerate && (
               <button
                 onClick={onRegenerate}
-                className="p-1.5 rounded-[4px] text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors"
                 title="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -232,7 +232,7 @@ export default function ChatMessage({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               rows={3}
-              className="w-full bg-slate-950 border border-indigo-500 rounded-[4px] p-2.5 text-xs text-slate-100 outline-none leading-relaxed resize-none font-normal"
+              className="w-full bg-slate-950 border border-[#3e55af] rounded-[4px] p-2.5 text-xs text-slate-100 outline-none leading-relaxed resize-none font-normal"
               autoFocus
             />
             <div className="flex items-center justify-end gap-2">
@@ -244,7 +244,7 @@ export default function ChatMessage({
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="flex items-center gap-1 px-3 py-1 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all"
+                className="flex items-center gap-1 px-3 py-1 rounded-[4px] bg-brand hover-bg-brand text-white text-xs font-semibold shadow-xs transition-all"
               >
                 <Play className="w-3 h-3 fill-current" />
                 <span>Save & Resubmit</span>
@@ -266,15 +266,15 @@ export default function ChatMessage({
             ) : message.isStreaming ? (
               <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
                 <span className="font-semibold text-slate-300">Yash AI is generating</span>
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             ) : null}
 
-            {/* Live Streaming Animated Pulse Cursor */}
+            {/* Live Streaming Animated Pulse Cursor with brand gradient */}
             {message.isStreaming && message.content && (
-              <span className="inline-block w-2 h-3.5 ml-1 bg-indigo-400 animate-pulse rounded-[1px] align-middle shadow-xs shadow-indigo-500" />
+              <span className="inline-block w-2 h-3.5 ml-1 bg-brand animate-pulse rounded-[1px] align-middle shadow-xs shadow-[#024dbe]" />
             )}
           </div>
         )}
@@ -284,7 +284,7 @@ export default function ChatMessage({
           <div className="pt-2 flex items-center gap-2">
             <button
               onClick={() => onRetryUserPrompt(message.content, index)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/40 hover:border-indigo-500 text-indigo-300 hover:text-white text-xs font-semibold transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-[#3e55af]/20 hover:bg-[#3e55af]/30 border border-[#3e55af]/50 text-blue-200 hover:text-white text-xs font-semibold transition-all shadow-xs"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Retry Prompt with Yash AI</span>
@@ -292,7 +292,7 @@ export default function ChatMessage({
             {onRecall && (
               <button
                 onClick={() => onRecall(message.content)}
-                className="px-2.5 py-1.5 rounded-[4px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-normal transition-colors"
+                className="px-2.5 py-1.5 rounded-[4px] bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 text-xs font-normal transition-colors"
               >
                 Recall to Input
               </button>

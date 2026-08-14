@@ -11,7 +11,6 @@ import {
   ArrowUpRight, 
   Zap,
   Terminal,
-  ShieldAlert,
   BrainCircuit,
   FileCode
 } from "lucide-react";
@@ -34,8 +33,8 @@ export default function EmptyState({ onSelectPrompt }) {
       prompt: "Write a clean custom useDebounce hook in React with explanation and example usage.",
       icon: Code2,
       badge: "TypeScript",
-      gradient: "from-blue-500/20 to-indigo-500/20",
-      accent: "text-blue-400 border-blue-500/30",
+      gradient: "from-[#3e55af] to-[#024dbe]",
+      accent: "text-blue-400 border-[#3e55af]/50",
     },
     {
       category: "code",
@@ -44,8 +43,8 @@ export default function EmptyState({ onSelectPrompt }) {
       prompt: "Tell me about HTML with full code examples, semantic elements, and modern practices.",
       icon: FileCode,
       badge: "Frontend",
-      gradient: "from-emerald-500/20 to-teal-500/20",
-      accent: "text-emerald-400 border-emerald-500/30",
+      gradient: "from-[#3e55af] to-[#024dbe]",
+      accent: "text-sky-400 border-sky-500/40",
     },
     {
       category: "architecture",
@@ -54,8 +53,8 @@ export default function EmptyState({ onSelectPrompt }) {
       prompt: "Architect a scalable Next.js 15+ SaaS folder structure with App Router, MongoDB Atlas, and Auth.",
       icon: Terminal,
       badge: "Fullstack",
-      gradient: "from-purple-500/20 to-indigo-500/20",
-      accent: "text-purple-400 border-purple-500/30",
+      gradient: "from-[#3e55af] to-[#024dbe]",
+      accent: "text-indigo-400 border-indigo-500/40",
     },
     {
       category: "ideas",
@@ -64,8 +63,8 @@ export default function EmptyState({ onSelectPrompt }) {
       prompt: "Brainstorm 5 high-impact AI SaaS product ideas for developers in 2026 with unique selling points and monetization models.",
       icon: BrainCircuit,
       badge: "Strategy",
-      gradient: "from-amber-500/20 to-orange-500/20",
-      accent: "text-amber-400 border-amber-500/30",
+      gradient: "from-[#3e55af] to-[#024dbe]",
+      accent: "text-blue-300 border-blue-500/40",
     },
   ];
 
@@ -76,8 +75,8 @@ export default function EmptyState({ onSelectPrompt }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 max-w-4xl mx-auto w-full relative overflow-hidden bg-cyber-grid">
       
-      {/* Background Radial Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-glow" />
+      {/* Background Radial Glow with brand colors #3e55af / #024dbe */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#024dbe]/15 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-glow" />
 
       {/* Hero Branding with Framer Motion */}
       <motion.div 
@@ -87,9 +86,9 @@ export default function EmptyState({ onSelectPrompt }) {
         className="text-center space-y-3.5 mb-6"
       >
         {/* Glowing Hero Pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[4px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold shadow-xs">
-          <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400/30" />
-          <span>Yash AI 3.0 • Real-Time Streaming & Cloud Database</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-[4px] bg-[#3e55af]/15 border border-[#3e55af]/40 text-blue-200 text-xs font-semibold shadow-xs">
+          <Zap className="w-3.5 h-3.5 text-blue-400 fill-blue-400/30" />
+          <span>Yash AI 3.0 • Real-Time Streaming & MongoDB Atlas</span>
         </div>
 
         {/* Logo Monogram */}
@@ -97,7 +96,7 @@ export default function EmptyState({ onSelectPrompt }) {
           <motion.div 
             whileHover={{ scale: 1.05, rotate: 2 }}
             transition={{ type: "spring", stiffness: 300, damping: 15 }}
-            className="p-2 rounded-[4px] bg-slate-900/80 border border-slate-800 shadow-xl"
+            className="p-2 rounded-[4px] bg-slate-900/90 border border-slate-800 shadow-xl"
           >
             <YashLogo size={46} />
           </motion.div>
@@ -112,7 +111,7 @@ export default function EmptyState({ onSelectPrompt }) {
         </p>
       </motion.div>
 
-      {/* Category Pills (Kokonut UI style) */}
+      {/* Category Pills (with brand gradient) */}
       <motion.div 
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -128,7 +127,7 @@ export default function EmptyState({ onSelectPrompt }) {
               onClick={() => setActiveCategory(cat.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all ${
                 isActive
-                  ? "bg-indigo-600 text-white shadow-xs"
+                  ? "bg-brand text-white shadow-xs border border-[#3e55af]"
                   : "bg-slate-900/70 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -139,7 +138,7 @@ export default function EmptyState({ onSelectPrompt }) {
         })}
       </motion.div>
 
-      {/* Prompt Cards Grid (Kokonut & Shadcn Card style) */}
+      {/* Prompt Cards Grid */}
       <motion.div 
         layout
         className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-3xl"
@@ -158,20 +157,20 @@ export default function EmptyState({ onSelectPrompt }) {
               onClick={() => onSelectPrompt(card.prompt)}
               className="glass-card group p-3.5 rounded-[4px] cursor-pointer flex flex-col justify-between relative overflow-hidden"
             >
-              {/* Subtle top gradient accent */}
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${card.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
+              {/* Top brand gradient bar */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-brand opacity-0 group-hover:opacity-100 transition-opacity" />
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-[4px] bg-slate-900 border border-slate-800 text-indigo-400 group-hover:text-white group-hover:bg-indigo-600 transition-colors">
+                    <div className="p-1.5 rounded-[4px] bg-slate-900 border border-slate-800 text-blue-400 group-hover:text-white group-hover:bg-brand transition-colors">
                       <CardIcon className="w-3.5 h-3.5" />
                     </div>
                     <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] border ${card.accent} font-semibold`}>
                       {card.badge}
                     </span>
                   </div>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                 </div>
 
                 <div>

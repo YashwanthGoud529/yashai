@@ -80,40 +80,32 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       }
 
       setError(null);
-      setSuccessMsg(data.message || (authMode === "signin" ? "Logged in successfully!" : "Account created in MongoDB Atlas!"));
+      setSuccessMsg(data.message || "Successfully authenticated!");
       
-      if (onAuthSuccess) {
-        onAuthSuccess(data.user);
-      }
-
       setTimeout(() => {
+        if (onAuthSuccess) onAuthSuccess(data.user);
         onClose();
-      }, 600);
+      }, 500);
     } catch (err) {
       setSuccessMsg(null);
-      setError(err.message || "Could not connect to MongoDB Atlas.");
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Google Authentication with Original Name, Email, & Profile Photo saved to MongoDB Atlas
+  // Google Authentication Submit with Real Profile Avatar URL
   const handleGoogleAuthSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
-    const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
     const cleanAvatar = avatarUrl.trim();
 
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setError("Please enter your original Google Email address.");
-      return;
-    }
-
-    if (!cleanName) {
-      setError("Please enter your original Google Name.");
+    if (!cleanName || !cleanEmail) {
+      setError("Please provide your Google name and email.");
       return;
     }
 
@@ -127,7 +119,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           name: cleanName,
           email: cleanEmail,
           avatar: cleanAvatar || null,
-          googleId: `google_${Date.now()}`,
+          googleId: `g_oauth_${Date.now()}`
         }),
       });
 
@@ -140,15 +132,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       }
 
       setError(null);
-      setSuccessMsg("Google account authenticated and saved in MongoDB Atlas!");
-
-      if (onAuthSuccess) {
-        onAuthSuccess(data.user);
-      }
+      setSuccessMsg(`Welcome, ${data.user.name}! Saved directly to MongoDB Atlas.`);
 
       setTimeout(() => {
+        if (onAuthSuccess) onAuthSuccess(data.user);
         onClose();
-      }, 600);
+      }, 500);
     } catch (err) {
       setSuccessMsg(null);
       setError(err.message || "Google authentication failed.");
@@ -160,23 +149,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
-        className="relative w-full max-w-md rounded-[4px] bg-[#0d1117] border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-md rounded-[4px] bg-[#0d1117] border border-slate-800 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-[#161b22]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="flex items-center gap-2.5">
             <YashLogo size={28} />
             <div>
-              <h3 className="font-semibold text-xs text-white uppercase tracking-wider">
-                {authMode === "google" 
-                  ? "Google Account Authentication" 
-                  : authMode === "signin" 
-                  ? "Sign In to Yash AI" 
-                  : "Create Yash AI Account"}
+              <h3 className="font-semibold text-sm text-white tracking-tight leading-none">
+                Yash AI Authentication
               </h3>
-              <p className="text-[11px] text-slate-400 font-normal">
-                Saved directly to MongoDB Atlas Cloud
+              <p className="text-[11px] text-slate-400 mt-0.5 font-normal">
+                Direct MongoDB Atlas cloud persistence
               </p>
             </div>
           </div>
@@ -189,14 +174,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
         </div>
 
-        {/* Auth Mode Tabs */}
-        <div className="grid grid-cols-3 p-1.5 m-5 mb-2 bg-slate-950 border border-slate-800 rounded-[4px] gap-1">
+        {/* Mode Selector */}
+        <div className="grid grid-cols-3 gap-1 px-5 mb-4 bg-slate-950 p-1 rounded-[4px] mx-5 border border-slate-800">
           <button
             type="button"
             onClick={() => setAuthMode("google")}
             className={`py-1.5 text-xs rounded-[4px] transition-all font-semibold flex items-center justify-center gap-1.5 ${
               authMode === "google"
-                ? "bg-indigo-600 text-white shadow-xs"
+                ? "bg-brand text-white shadow-xs"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -213,7 +198,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             onClick={() => setAuthMode("signin")}
             className={`py-1.5 text-xs rounded-[4px] transition-all font-semibold ${
               authMode === "signin"
-                ? "bg-indigo-600 text-white shadow-xs"
+                ? "bg-brand text-white shadow-xs"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -224,7 +209,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             onClick={() => setAuthMode("register")}
             className={`py-1.5 text-xs rounded-[4px] transition-all font-semibold ${
               authMode === "register"
-                ? "bg-indigo-600 text-white shadow-xs"
+                ? "bg-brand text-white shadow-xs"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -263,7 +248,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Yashwanth Goud"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                   />
                 </div>
               </div>
@@ -278,7 +263,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="yourname@gmail.com"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                   />
                 </div>
               </div>
@@ -295,7 +280,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://lh3.googleusercontent.com/... (or leave blank for initials)"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                   />
                 </div>
               </div>
@@ -303,7 +288,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-2 px-4 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2 px-4 rounded-[4px] bg-brand hover-bg-brand disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <span className="flex items-center gap-1.5">
@@ -332,7 +317,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter your full name"
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                     />
                   </div>
                 </div>
@@ -349,7 +334,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                   />
                 </div>
               </div>
@@ -368,7 +353,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-9 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal font-mono"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-9 pr-9 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal font-mono"
                   />
                   <button
                     type="button"
@@ -384,7 +369,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-2 px-4 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5"
+                className="w-full mt-2 py-2 px-4 rounded-[4px] bg-brand hover-bg-brand disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5"
               >
                 {loading ? (
                   <span className="flex items-center gap-1.5">
@@ -404,7 +389,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-800 bg-[#161b22] flex items-center justify-center text-[11px] text-slate-400 gap-1.5">
-          <Shield className="w-3.5 h-3.5 text-indigo-400" />
+          <Shield className="w-3.5 h-3.5 text-blue-400" />
           <span>Synced directly to MongoDB Atlas Cloud</span>
         </div>
       </div>

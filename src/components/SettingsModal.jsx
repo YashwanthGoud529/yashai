@@ -131,7 +131,7 @@ export default function SettingsModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-[#161b22]">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-[4px] bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-1.5 rounded-[4px] bg-[#3e55af]/20 text-blue-400 border border-[#3e55af]/40">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
@@ -152,7 +152,7 @@ export default function SettingsModal({
           </button>
         </div>
 
-        {/* Tab Navigation (Kokonut / Shadcn style) */}
+        {/* Tab Navigation */}
         <div className="flex items-center border-b border-slate-800 bg-slate-950 px-3 pt-2 gap-1 overflow-x-auto no-scrollbar">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -168,7 +168,7 @@ export default function SettingsModal({
                     : "text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-900"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-indigo-400" : "text-slate-500"}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-blue-400" : "text-slate-500"}`} />
                 <span>{t.label}</span>
               </button>
             );
@@ -219,16 +219,16 @@ export default function SettingsModal({
                       onClick={() => setModel(m.id)}
                       className={`p-3 rounded-[4px] border cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-indigo-950/30 border-indigo-500 text-white shadow-xs"
+                          ? "bg-slate-900/90 border-[#3e55af] text-white shadow-xs"
                           : "bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-semibold">
-                          <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-indigo-400" : "bg-slate-600"}`} />
+                          <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-blue-400" : "bg-slate-600"}`} />
                           <span>{m.title}</span>
                         </div>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] bg-[#3e55af]/20 text-blue-300 border border-[#3e55af]/40 font-semibold">
                           {m.badge}
                         </span>
                       </div>
@@ -260,7 +260,7 @@ export default function SettingsModal({
                   value={keyInput}
                   onChange={(e) => setKeyInput(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-3 pr-9 py-2 text-xs font-mono text-slate-200 placeholder:text-slate-600 outline-none transition-colors"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] pl-3 pr-9 py-2 text-xs font-mono text-slate-200 placeholder:text-slate-600 outline-none transition-colors"
                 />
                 <button
                   type="button"
@@ -275,7 +275,7 @@ export default function SettingsModal({
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold hover:underline"
+                className="inline-flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-semibold hover:underline"
               >
                 <span>Get a free Google Gemini API Key from Google AI Studio</span>
                 <ExternalLink className="w-3 h-3" />
@@ -302,7 +302,7 @@ export default function SettingsModal({
                     key={preset.label}
                     type="button"
                     onClick={() => setSysPrompt(preset.prompt)}
-                    className="px-2.5 py-1 rounded-[4px] bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[11px] text-slate-300 hover:text-indigo-300 transition-colors font-normal"
+                    className="px-2.5 py-1 rounded-[4px] bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[11px] text-slate-300 hover:text-blue-300 transition-colors font-normal"
                   >
                     + {preset.label}
                   </button>
@@ -314,7 +314,7 @@ export default function SettingsModal({
                 onChange={(e) => setSysPrompt(e.target.value)}
                 rows={4}
                 placeholder="e.g. You are a senior frontend engineer. Always provide modular React code..."
-                className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] p-2.5 text-xs text-slate-200 placeholder:text-slate-600 outline-none leading-relaxed resize-none font-normal"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-[#3e55af] rounded-[4px] p-2.5 text-xs text-slate-200 placeholder:text-slate-600 outline-none leading-relaxed resize-none font-normal"
               />
             </div>
           )}
@@ -341,7 +341,7 @@ export default function SettingsModal({
                     <div>Export Current Chat</div>
                     <span className="text-[10px] text-slate-400 font-normal">Markdown (.md) format</span>
                   </div>
-                  <Download className="w-4 h-4 text-indigo-400" />
+                  <Download className="w-4 h-4 text-blue-400" />
                 </button>
 
                 <button
@@ -353,7 +353,7 @@ export default function SettingsModal({
                     <div>Export All History</div>
                     <span className="text-[10px] text-slate-400 font-normal">JSON backup format</span>
                   </div>
-                  <Download className="w-4 h-4 text-purple-400" />
+                  <Download className="w-4 h-4 text-blue-300" />
                 </button>
               </div>
             </div>
@@ -363,7 +363,7 @@ export default function SettingsModal({
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-800 bg-[#161b22] flex items-center justify-between">
           <div className="flex items-center gap-1 text-[11px] text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
             <span>Settings saved encrypted</span>
           </div>
 
@@ -380,7 +380,7 @@ export default function SettingsModal({
               whileTap={{ scale: 0.98 }}
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-brand hover-bg-brand text-white text-xs font-semibold shadow-sm transition-all"
             >
               {savedSuccess ? (
                 <>

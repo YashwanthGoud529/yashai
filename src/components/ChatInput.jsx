@@ -127,14 +127,14 @@ export default function ChatInput({
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 pb-3 sm:pb-5">
       
-      {/* Quick Prompt Modifier Chips (Kokonut UI style) */}
+      {/* Quick Prompt Modifier Chips */}
       <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 no-scrollbar text-xs">
         <button
           type="button"
           onClick={() => handleInsertPrefix("Explain this step by step:")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-indigo-300 text-[11px] font-normal transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap"
         >
-          <Sparkles className="w-3 h-3 text-indigo-400" />
+          <Sparkles className="w-3 h-3 text-blue-400" />
           <span>Explain Step-by-Step</span>
         </button>
 
@@ -150,9 +150,9 @@ export default function ChatInput({
         <button
           type="button"
           onClick={() => handleInsertPrefix("Summarize the key takeaways of:")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-emerald-300 text-[11px] font-normal transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap"
         >
-          <FileText className="w-3 h-3 text-emerald-400" />
+          <FileText className="w-3 h-3 text-blue-400" />
           <span>Summarize</span>
         </button>
       </div>
@@ -160,8 +160,8 @@ export default function ChatInput({
       {/* Floating Glassmorphic Input Composer */}
       <motion.div 
         animate={{ 
-          borderColor: isFocused ? "rgba(99, 102, 241, 0.6)" : "rgba(30, 41, 59, 0.8)",
-          boxShadow: isFocused ? "0 8px 30px -10px rgba(99, 102, 241, 0.25)" : "0 4px 20px -5px rgba(0, 0, 0, 0.5)"
+          borderColor: isFocused ? "#3e55af" : "rgba(30, 41, 59, 0.8)",
+          boxShadow: isFocused ? "0 8px 30px -10px rgba(2, 77, 190, 0.4)" : "0 4px 20px -5px rgba(0, 0, 0, 0.5)"
         }}
         className="relative rounded-[4px] bg-slate-900/90 border transition-all duration-200 backdrop-blur-md overflow-hidden"
       >
@@ -183,8 +183,8 @@ export default function ChatInput({
         <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-1.5">
           {/* Left Badges */}
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-400 font-mono text-[11px] border border-indigo-500/20 font-semibold">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#3e55af]/15 text-blue-300 font-mono text-[11px] border border-[#3e55af]/30 font-semibold">
+              <Sparkles className="w-3 h-3 text-blue-400" />
               {modelName}
             </span>
             <span className="hidden sm:inline-block text-[11px] text-slate-500 font-normal">
@@ -194,7 +194,7 @@ export default function ChatInput({
 
           {/* Right Action buttons */}
           <div className="flex items-center gap-1.5">
-            {/* Voice input with pulsing wave */}
+            {/* Voice input */}
             <button
               type="button"
               onClick={toggleVoice}
@@ -226,7 +226,7 @@ export default function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() || disabled}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 disabled:opacity-35 disabled:hover:bg-indigo-600 text-white text-xs font-semibold shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-brand hover-bg-brand disabled:opacity-35 text-white text-xs font-semibold shadow-sm transition-all"
               >
                 <span>Send</span>
                 <CornerDownLeft className="w-3 h-3" />
