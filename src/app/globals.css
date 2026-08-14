@@ -1,0 +1,140 @@
+@import "tailwindcss";
+@import "highlight.js/styles/atom-one-dark.css";
+
+:root {
+  --background: #090a0f;
+  --foreground: #f1f5f9;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Glow effects */
+.glow-subtle {
+  box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.15);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.2);
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(30, 41, 59, 0.75);
+}
+
+/* Markdown prose overrides */
+.chat-prose {
+  line-height: 1.7;
+  font-size: 0.96rem;
+}
+
+.chat-prose p {
+  margin-bottom: 0.85rem;
+}
+
+.chat-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-prose ul, .chat-prose ol {
+  margin-left: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.chat-prose li {
+  margin-bottom: 0.35rem;
+}
+
+.chat-prose h1, .chat-prose h2, .chat-prose h3, .chat-prose h4 {
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 1.25rem;
+  margin-bottom: 0.6rem;
+}
+
+.chat-prose h1 { font-size: 1.35rem; }
+.chat-prose h2 { font-size: 1.2rem; }
+.chat-prose h3 { font-size: 1.05rem; }
+
+.chat-prose code:not(pre code) {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  color: #a5b4fc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.chat-prose pre {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.chat-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.chat-prose th, .chat-prose td {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.chat-prose th {
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
+.chat-prose blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  color: #94a3b8;
+  font-style: italic;
+}
