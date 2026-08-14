@@ -20,7 +20,7 @@ export async function POST(request) {
     if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
       return NextResponse.json(
         {
-          error: "Gemini API Key is missing. Please click Settings (⚙️) in the top-right to enter your key, or add it to .env.local.",
+          error: "Gemini API Key is missing. Please click Settings (⚙️) in the top-right to enter your key, or add it in Vercel Environment Variables.",
           isKeyMissing: true,
         },
         { status: 401 }
