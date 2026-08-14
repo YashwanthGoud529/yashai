@@ -13,7 +13,7 @@ export async function POST(request) {
       );
     }
 
-    const { messages, model = "gemini-flash-lite-latest", systemInstruction, customApiKey } = body;
+    const { messages, model, systemInstruction, customApiKey } = body;
 
     const apiKey = (customApiKey || process.env.GEMINI_API_KEY || "").trim();
 
@@ -71,9 +71,28 @@ export async function POST(request) {
     const stream = new ReadableStream({
       async start(controller) {
         let streamSuccess = false;
+        let isClosed = false;
+
+        const safeEnqueue = (text) => {
+          if (isClosed || !text) return;
+          try {
+            controller.enqueue(encoder.encode(text));
+          } catch (err) {
+            isClosed = true;
+          }
+        };
+
+        const safeClose = () => {
+          if (isClosed) return;
+          isClosed = true;
+          try {
+            controller.close();
+          } catch (err) {}
+        };
 
         // Try streaming across active quota models
         for (const m of modelsToTry) {
+          if (isClosed) break;
           try {
             const responseStream = await ai.models.generateContentStream({
               model: m,
@@ -82,9 +101,10 @@ export async function POST(request) {
             });
 
             for await (const chunk of responseStream) {
+              if (isClosed) break;
               const text = chunk.text || "";
               if (text) {
-                controller.enqueue(encoder.encode(text));
+                safeEnqueue(text);
                 streamSuccess = true;
               }
             }
@@ -96,7 +116,7 @@ export async function POST(request) {
         }
 
         // Non-streaming fallback if stream was interrupted
-        if (!streamSuccess) {
+        if (!streamSuccess && !isClosed) {
           for (const m of modelsToTry) {
             try {
               const staticRes = await ai.models.generateContent({
@@ -106,7 +126,7 @@ export async function POST(request) {
               });
 
               if (staticRes && staticRes.text) {
-                controller.enqueue(encoder.encode(staticRes.text));
+                safeEnqueue(staticRes.text);
                 streamSuccess = true;
                 break;
               }
@@ -116,15 +136,13 @@ export async function POST(request) {
           }
         }
 
-        if (!streamSuccess) {
-          controller.enqueue(
-            encoder.encode(
-              "I apologize, but all free-tier API quotas are temporarily busy. Please wait 15 seconds or provide your own Gemini API key in Settings (⚙️)."
-            )
+        if (!streamSuccess && !isClosed) {
+          safeEnqueue(
+            "I apologize, but all free-tier API quotas are temporarily busy. Please wait 15 seconds or provide your own Gemini API key in Settings (⚙️)."
           );
         }
 
-        controller.close();
+        safeClose();
       },
     });
 

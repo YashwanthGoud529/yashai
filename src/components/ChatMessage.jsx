@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import confetti from "canvas-confetti";
 import YashLogo from "./YashLogo";
+import ThinkingIndicator from "./ThinkingIndicator";
 import { 
   User, 
   Copy, 
@@ -288,17 +289,19 @@ export default function ChatMessage({
                 {message.content}
               </ReactMarkdown>
             ) : message.isStreaming ? (
-              <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
-                <span className="font-semibold text-slate-300">Yash AI is generating</span>
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-[2px] bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+              /* Ultra-Professional Reasoning Card */
+              <ThinkingIndicator />
             ) : null}
 
-            {/* Live Streaming Animated Pulse Cursor with brand gradient */}
+            {/* Glowing Laser Streaming Cursor */}
             {message.isStreaming && message.content && (
-              <span className="inline-block w-2 h-3.5 ml-1 bg-brand animate-pulse rounded-[1px] align-middle shadow-xs shadow-[#024dbe]" />
+              <span 
+                className="inline-block w-2 h-4 ml-1 rounded-[2px] align-middle animate-pulse"
+                style={{
+                  background: 'linear-gradient(180deg, #60a5fa 0%, #024dbe 100%)',
+                  boxShadow: '0 0 10px rgba(2, 77, 190, 0.9), 0 0 4px rgba(96, 165, 250, 0.8)',
+                }}
+              />
             )}
           </div>
         )}
