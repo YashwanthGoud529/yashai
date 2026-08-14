@@ -3,9 +3,34 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { signToken, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
 
+// Decode Google JWT payload safely
+function parseJwt(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = Buffer.from(base64, "base64").toString("utf-8");
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function POST(request) {
   try {
-    const { name, email, googleId } = await request.json();
+    const body = await request.json();
+    let { name, email, googleId, avatar, credential } = body;
+
+    // If Google GIS returns a JWT credential, parse real user details
+    if (credential) {
+      const decoded = parseJwt(credential);
+      if (decoded && decoded.email) {
+        email = decoded.email;
+        name = decoded.name || decoded.given_name || name;
+        googleId = decoded.sub || googleId;
+        avatar = decoded.picture || avatar;
+      }
+    }
 
     if (!email || !email.trim()) {
       return NextResponse.json(
@@ -15,13 +40,8 @@ export async function POST(request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const cleanName = (name || "Google User").trim();
-    const initials = cleanName
-      .split(" ")
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "GU";
+    const cleanName = (name || normalizedEmail.split("@")[0]).trim();
+    const profileAvatar = avatar || cleanName.slice(0, 2).toUpperCase();
 
     const conn = await connectToDatabase();
     if (!conn) {
@@ -31,7 +51,7 @@ export async function POST(request) {
       );
     }
 
-    // Find or create in MongoDB Atlas
+    // Find or create user in MongoDB Atlas
     let user = await User.findOne({
       $or: [{ googleId: googleId || "google_dummy" }, { email: normalizedEmail }],
     });
@@ -41,17 +61,18 @@ export async function POST(request) {
         name: cleanName,
         email: normalizedEmail,
         googleId: googleId || `g_${Date.now()}`,
-        avatar: initials,
+        avatar: profileAvatar,
         provider: "google",
         credits: 100,
       });
-      console.log("✅ Created new Google user in MongoDB Atlas:", user.email);
+      console.log("✅ Saved new Google user to MongoDB Atlas:", user.email, "Avatar:", user.avatar);
     } else {
-      if (!user.googleId && googleId) user.googleId = googleId;
-      user.avatar = initials;
+      if (googleId) user.googleId = googleId;
+      user.name = cleanName;
+      user.avatar = profileAvatar;
       user.provider = "google";
       await user.save();
-      console.log("✅ Found existing Google user in MongoDB Atlas:", user.email);
+      console.log("✅ Updated Google user profile in MongoDB Atlas:", user.email);
     }
 
     const userId = user._id.toString();
@@ -68,7 +89,7 @@ export async function POST(request) {
       id: userId,
       name: user.name,
       email: user.email,
-      avatar: initials,
+      avatar: user.avatar,
       credits: user.credits ?? 100,
       provider: "google",
     };
@@ -77,7 +98,7 @@ export async function POST(request) {
       success: true,
       user: userResponse,
       token,
-      message: "Successfully authenticated with Google in MongoDB Atlas!",
+      message: "Successfully signed in with Google!",
     });
 
     response.cookies.set({
