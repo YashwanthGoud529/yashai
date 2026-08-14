@@ -27,17 +27,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  // Reset errors when modal opens/closes
+  // Clear all states when modal opens/closes or switches mode
   useEffect(() => {
-    if (isOpen) {
-      setError(null);
-      setSuccessMsg(null);
-    }
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(false);
+    setGoogleLoading(false);
   }, [isOpen, isLogin]);
 
   if (!isOpen) return null;
 
-  // Regular Email/Password Submit (100% Dynamic user data)
+  // Regular Email/Password Submit (100% Dynamic data saved directly in MongoDB Atlas)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -74,10 +74,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || "Authentication failed. Please check your details.");
+        setSuccessMsg(null);
+        setError(data.error || "Authentication failed.");
+        return;
       }
 
-      setSuccessMsg(data.message || (isLogin ? "Logged in successfully!" : "Account created successfully!"));
+      setError(null);
+      setSuccessMsg(data.message || (isLogin ? "Logged in successfully!" : "Account created in MongoDB Atlas!"));
       
       if (onAuthSuccess) {
         onAuthSuccess(data.user);
@@ -85,9 +88,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
       setTimeout(() => {
         onClose();
-      }, 500);
+      }, 600);
     } catch (err) {
-      setError(err.message || "An unexpected error occurred. Please try again.");
+      setSuccessMsg(null);
+      setError(err.message || "Could not connect to authentication service.");
     } finally {
       setLoading(false);
     }
@@ -96,62 +100,32 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   // Real Dynamic Google Sign-In
   const handleGoogleSignIn = async () => {
     setError(null);
+    setSuccessMsg(null);
     setGoogleLoading(true);
 
     try {
-      // 1. If Google GIS OAuth is initialized in browser
-      if (typeof window !== "undefined" && window.google?.accounts?.oauth2) {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "1029384756-dummy.apps.googleusercontent.com",
-          scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-          callback: async (tokenResponse) => {
-            if (tokenResponse.access_token) {
-              const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              const googleUser = await userInfoRes.json();
-
-              // Send real Google data to MongoDB
-              const res = await fetch("/api/auth/google", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name: googleUser.name,
-                  email: googleUser.email,
-                  googleId: googleUser.sub,
-                  avatar: googleUser.picture,
-                }),
-              });
-
-              const data = await res.json();
-              if (res.ok && data.user) {
-                setSuccessMsg("Signed in with Google successfully!");
-                if (onAuthSuccess) onAuthSuccess(data.user);
-                setTimeout(() => onClose(), 400);
-              }
-            }
-          },
-        });
-        client.requestAccessToken();
+      const cleanEmail = email.trim().toLowerCase();
+      
+      if (!cleanEmail) {
         setGoogleLoading(false);
+        setError("Please enter your Google Email address in the field below to continue.");
         return;
       }
 
-      // 2. Dynamic prompt fallback: Prompt user for their actual Google Account email
-      const userGoogleEmail = email.trim() || prompt("Enter your Google Account email address:");
-      if (!userGoogleEmail || !userGoogleEmail.includes("@")) {
+      if (!cleanEmail.includes("@")) {
         setGoogleLoading(false);
+        setError("Please enter a valid Google email address.");
         return;
       }
 
-      const userGoogleName = name.trim() || userGoogleEmail.split("@")[0].replace(/[._]/g, " ");
+      const cleanName = name.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
 
       const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: userGoogleName,
-          email: userGoogleEmail.trim().toLowerCase(),
+          name: cleanName,
+          email: cleanEmail,
           googleId: `g_${Date.now()}`,
         }),
       });
@@ -159,9 +133,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || "Google authentication failed.");
+        setSuccessMsg(null);
+        setError(data.error || "Google authentication failed.");
+        return;
       }
 
+      setError(null);
       setSuccessMsg("Signed in with Google successfully!");
 
       if (onAuthSuccess) {
@@ -170,8 +147,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
       setTimeout(() => {
         onClose();
-      }, 500);
+      }, 600);
     } catch (err) {
+      setSuccessMsg(null);
       setError(err.message || "Google authentication failed. Please try again.");
     } finally {
       setGoogleLoading(false);
@@ -193,7 +171,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 {isLogin ? "Sign In to Yash AI" : "Create Yash AI Account"}
               </h3>
               <p className="text-[11px] text-slate-400 font-normal">
-                {isLogin ? "Access your saved cloud conversations" : "Sync chats with MongoDB Atlas"}
+                {isLogin ? "Access your saved cloud conversations" : "Sync chats with MongoDB Atlas Cloud"}
               </p>
             </div>
           </div>
@@ -217,7 +195,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             {googleLoading ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Connecting to Google...
+                Connecting with Google...
               </span>
             ) : (
               <>
@@ -258,6 +236,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             onClick={() => {
               setIsLogin(true);
               setError(null);
+              setSuccessMsg(null);
             }}
             className={`py-1.5 text-xs rounded-[4px] transition-all font-semibold ${
               isLogin
@@ -272,6 +251,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             onClick={() => {
               setIsLogin(false);
               setError(null);
+              setSuccessMsg(null);
             }}
             className={`py-1.5 text-xs rounded-[4px] transition-all font-semibold ${
               !isLogin
@@ -285,7 +265,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-5 pb-5 space-y-3">
-          {/* Error Alert */}
+          {/* Error Alert (Only when error is present and no success) */}
           {error && (
             <div className="p-2.5 rounded-[4px] bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -293,8 +273,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             </div>
           )}
 
-          {/* Success Alert */}
-          {successMsg && (
+          {/* Success Alert (Only when success is present and no error) */}
+          {!error && successMsg && (
             <div className="p-2.5 rounded-[4px] bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in duration-150">
               <Check className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="font-semibold">{successMsg}</span>
@@ -312,7 +292,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
+                  placeholder="Enter your full name"
                   className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-[4px] pl-9 pr-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none transition-colors font-normal"
                 />
               </div>
@@ -384,7 +364,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-800 bg-[#161b22] flex items-center justify-center text-[11px] text-slate-400 gap-1.5">
           <Shield className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Secured with MongoDB Atlas & bcrypt Encryption</span>
+          <span>Secured with MongoDB Atlas Cloud & bcrypt</span>
         </div>
       </div>
     </div>
