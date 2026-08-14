@@ -10,17 +10,18 @@ import {
   Copy, 
   Check, 
   RotateCcw, 
-  Trash2,
-  Pencil,
-  ArrowUpRight,
-  Play
+  Trash2, 
+  Pencil, 
+  Play,
+  RotateCw
 } from "lucide-react";
 
+// Flat, high-contrast code block with 0 overlay
 function CodeBlock({ node, inline, className, children, ...props }) {
+  const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
   const language = match ? match[1] : "";
   const codeString = String(children).replace(/\n$/, "");
-  const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(codeString);
@@ -28,64 +29,65 @@ function CodeBlock({ node, inline, className, children, ...props }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!inline && match) {
+  if (inline) {
     return (
-      <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden">
-        {/* Sleek Minimal Header */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-slate-800 text-xs font-mono">
-          <span className="uppercase font-semibold text-indigo-400 tracking-wider text-[11px]">
-            {language}
-          </span>
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all text-xs border border-slate-700/80 font-sans"
-            title="Copy code"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-semibold">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Code Content — completely flat without weird overlays */}
-        <div className="p-3.5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed text-slate-100 bg-[#0d1117]">
-          <code className={className} {...props}>
-            {children}
-          </code>
-        </div>
-      </div>
+      <code className="bg-slate-900 text-indigo-300 font-mono text-[11px] px-1.5 py-0.5 rounded-[4px] border border-slate-800" {...props}>
+        {children}
+      </code>
     );
   }
 
   return (
-    <code className={className} {...props}>
-      {children}
-    </code>
+    <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden">
+      {/* Code Header */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-slate-800 text-xs">
+        <span className="text-slate-400 font-mono text-[11px] uppercase tracking-wider font-semibold">
+          {language || "code"}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded-[4px] hover:bg-slate-850 transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3 text-emerald-400" />
+              <span className="text-emerald-400 font-semibold">Copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Code Body */}
+      <pre className="p-3.5 overflow-x-auto text-xs font-mono bg-[#0d1117] text-slate-200 leading-relaxed">
+        <code className={className} {...props}>
+          {children}
+        </code>
+      </pre>
+    </div>
   );
 }
 
-export default function ChatMessage({ 
-  message, 
-  onRegenerate, 
+export default function ChatMessage({
+  message,
+  index,
+  onRegenerate,
   onRecall,
-  onDelete, 
-  isLastAI,
-  isLastUserWithoutAI,
+  onDelete,
   onRetryUserPrompt,
-  index 
+  isLastAI = false,
+  isLastUserWithoutAI = false,
 }) {
-  const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
+
+  const isUser = message.role === "user";
 
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);
@@ -158,44 +160,43 @@ export default function ChatMessage({
               <button
                 onClick={() => onRecall(message.content)}
                 className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors font-normal"
-                title="Recall prompt into input composer"
+                title="Recall this prompt to input composer"
               >
-                <RotateCcw className="w-3 h-3 text-indigo-400" />
+                <RotateCw className="w-3 h-3 text-indigo-400" />
                 <span>Recall</span>
               </button>
             )}
 
-            {/* Inline Edit Prompt Button */}
+            {/* Edit User Message */}
             {isUser && (
               <button
                 onClick={() => {
-                  setIsEditing(!isEditing);
                   setEditText(message.content);
+                  setIsEditing(!isEditing);
                 }}
                 className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                title="Edit & Resubmit prompt"
+                title="Edit and resubmit prompt"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
             )}
 
-            {/* AI Regenerate */}
+            {/* Regenerate AI answer */}
             {!isUser && isLastAI && onRegenerate && (
               <button
                 onClick={onRegenerate}
-                className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors font-normal"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors"
                 title="Regenerate response"
               >
-                <RotateCcw className="w-3 h-3 text-indigo-400" />
-                <span>Regenerate</span>
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             )}
 
-            {/* Delete */}
+            {/* Delete message */}
             {onDelete && (
               <button
                 onClick={() => onDelete(index)}
-                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors"
                 title="Delete message"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -232,15 +233,29 @@ export default function ChatMessage({
           </div>
         ) : (
           <div className="chat-prose text-slate-200">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-              components={{
-                code: CodeBlock,
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+            {message.content ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                components={{
+                  code: CodeBlock,
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            ) : message.isStreaming ? (
+              <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
+                <span className="font-semibold text-slate-300">Yash AI is generating</span>
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            ) : null}
+
+            {/* Live Streaming Animated Pulse Indicator */}
+            {message.isStreaming && message.content && (
+              <span className="inline-block w-2 h-3.5 ml-1 bg-indigo-400 animate-pulse rounded-[1px] align-middle shadow-xs shadow-indigo-500" />
+            )}
           </div>
         )}
 

@@ -12,9 +12,6 @@ import { secureStorage } from "../lib/secureStorage";
 import { 
   Menu, 
   Sparkles, 
-  RotateCcw, 
-  Trash2, 
-  Download, 
   SlidersHorizontal,
   Plus,
   AlertCircle,
@@ -49,15 +46,17 @@ export default function Home() {
         if (data.user) {
           setUser(data.user);
           return data.user;
+        } else {
+          setUser(null);
         }
       }
     } catch (e) {
-      console.warn("Session check notice:", e);
+      console.warn("Session notice:", e);
     }
     return null;
   };
 
-  // Fetch conversations for the current user
+  // Fetch conversations for the current user from MongoDB Atlas
   const fetchUserConversations = async () => {
     try {
       const res = await fetch("/api/conversations");
@@ -87,7 +86,7 @@ export default function Home() {
         setCurrentId(null);
       }
     } catch (e) {
-      console.error("Secure storage notice:", e);
+      console.error("Storage notice:", e);
     }
   };
 
@@ -127,11 +126,11 @@ export default function Home() {
       setUser(null);
       await fetchUserConversations();
     } catch (e) {
-      console.error("Logout error:", e);
+      console.error("Logout notice:", e);
     }
   };
 
-  // Sync conversation to database & secure local storage
+  // Sync conversation directly to MongoDB Atlas
   const syncConversationToDb = async (conversation) => {
     try {
       await fetch("/api/conversations", {
@@ -140,11 +139,11 @@ export default function Home() {
         body: JSON.stringify(conversation),
       });
     } catch (e) {
-      console.warn("DB sync notice:", e);
+      console.warn("MongoDB sync notice:", e);
     }
   };
 
-  // Scroll to bottom
+  // Auto scroll
   const scrollToBottom = (behavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   };
@@ -190,7 +189,7 @@ export default function Home() {
     try {
       await fetch(`/api/conversations/${id}`, { method: "DELETE" });
     } catch (e) {
-      console.warn("Delete DB notice:", e);
+      console.warn("Delete notice:", e);
     }
   };
 
@@ -207,13 +206,13 @@ export default function Home() {
         body: JSON.stringify({ title: newTitle }),
       });
     } catch (e) {
-      console.warn("Rename DB notice:", e);
+      console.warn("Rename notice:", e);
     }
   };
 
   // Clear all chats
   const handleClearAllChats = async () => {
-    if (confirm("Are you sure you want to delete all chat history?")) {
+    if (confirm("Are you sure you want to clear all chat conversations?")) {
       setConversations([]);
       setCurrentId(null);
       secureStorage.removeItem("yash_ai_chats_v1");
@@ -221,7 +220,7 @@ export default function Home() {
       try {
         await fetch("/api/conversations", { method: "DELETE" });
       } catch (e) {
-        console.warn("Clear DB notice:", e);
+        console.warn("Clear notice:", e);
       }
     }
   };
@@ -244,41 +243,40 @@ export default function Home() {
     secureStorage.setItem("gemini_system_prompt", prompt);
   };
 
-  // Recall prompt into chat input
+  // Recall prompt into composer
   const handleRecallPrompt = (content) => {
     setRecalledPrompt(content);
   };
 
-  // Retry or Edit a specific prompt in history
-  const handleRetryUserPrompt = async (newText, messageIndex) => {
-    if (!newText.trim()) return;
-    setErrorMessage(null);
-
-    const targetConv = currentConversation;
-    if (!targetConv) return;
-
-    // Slice messages up to messageIndex
-    const sliced = targetConv.messages.slice(0, messageIndex);
-    const updatedUserMsg = {
-      role: "user",
-      content: newText,
-      timestamp: new Date().toISOString(),
-    };
-    const newMessages = [...sliced, updatedUserMsg];
-
-    const updatedConv = {
-      ...targetConv,
-      updatedAt: new Date().toISOString(),
-      messages: newMessages,
-    };
-
-    setConversations((prev) =>
-      prev.map((c) => (c.id === currentId ? updatedConv : c))
-    );
-    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(conversations));
-
+  // Stream Step-by-Step Response Reader
+  const streamAIResponse = async (chatMessages, targetChatId, chatTitle) => {
     setLoading(true);
     abortControllerRef.current = new AbortController();
+
+    // 1. Append placeholder streaming AI message
+    const initialAIMessage = {
+      role: "assistant",
+      content: "",
+      model: selectedModel,
+      timestamp: new Date().toISOString(),
+      isStreaming: true,
+    };
+
+    const messagesWithAI = [...chatMessages, initialAIMessage];
+    const aiMessageIndex = messagesWithAI.length - 1;
+
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === targetChatId
+          ? {
+              ...c,
+              title: chatTitle,
+              updatedAt: new Date().toISOString(),
+              messages: messagesWithAI,
+            }
+          : c
+      )
+    );
 
     try {
       const response = await fetch("/api/chat", {
@@ -286,57 +284,89 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         signal: abortControllerRef.current.signal,
         body: JSON.stringify({
-          messages: newMessages,
+          messages: chatMessages,
           model: selectedModel,
           systemInstruction: systemPrompt,
           customApiKey: apiKey,
         }),
       });
 
-      const responseText = await response.text();
-      let data = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error("Failed to parse JSON response:", responseText);
-      }
-
-      if (!response.ok || data.error) {
-        if (data.isKeyMissing || response.status === 401) {
+      if (!response.ok) {
+        const errText = await response.text();
+        let errData = {};
+        try { errData = JSON.parse(errText); } catch (e) {}
+        if (errData.isKeyMissing || response.status === 401) {
           setSettingsOpen(true);
         }
-        throw new Error(data.error || `Request failed with status ${response.status}`);
+        throw new Error(errData.error || `Server error (${response.status})`);
       }
 
-      const aiMessage = {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let accumulatedText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        accumulatedText += chunk;
+
+        // Update active message in real-time step by step
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== targetChatId) return c;
+            const updatedMsgs = [...c.messages];
+            if (updatedMsgs[aiMessageIndex]) {
+              updatedMsgs[aiMessageIndex] = {
+                ...updatedMsgs[aiMessageIndex],
+                content: accumulatedText,
+                isStreaming: true,
+              };
+            }
+            return {
+              ...c,
+              updatedAt: new Date().toISOString(),
+              messages: updatedMsgs,
+            };
+          })
+        );
+        scrollToBottom("smooth");
+      }
+
+      // Finalize completed message
+      const finalAIMessage = {
         role: "assistant",
-        content: data.reply,
+        content: accumulatedText || "Response complete.",
         model: selectedModel,
         timestamp: new Date().toISOString(),
+        isStreaming: false,
       };
 
       const finalConv = {
-        ...updatedConv,
-        messages: [...newMessages, aiMessage],
+        id: targetChatId,
+        title: chatTitle,
+        updatedAt: new Date().toISOString(),
+        messages: [...chatMessages, finalAIMessage],
       };
 
       setConversations((prev) =>
-        prev.map((c) => (c.id === currentId ? finalConv : c))
+        prev.map((c) => (c.id === targetChatId ? finalConv : c))
       );
       secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(conversations));
       syncConversationToDb(finalConv);
     } catch (err) {
       if (err.name !== "AbortError") {
-        setErrorMessage(err.message || "Failed to generate response.");
+        setErrorMessage(err.message || "Failed to generate step-by-step response.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Send Message
+  // Send Message with Real-Time Step-by-Step Streaming
   const handleSendMessage = async (userText) => {
-    if (!userText.trim()) return;
+    if (!userText.trim() || loading) return;
     setErrorMessage(null);
 
     let activeChatId = currentId;
@@ -369,83 +399,29 @@ export default function Home() {
         ? userText.slice(0, 32) + (userText.length > 32 ? "..." : "")
         : currentConversation?.title || "Conversation";
 
-    const updatedConv = {
-      id: activeChatId,
-      title: autoTitle,
-      updatedAt: new Date().toISOString(),
-      messages: updatedMessages,
-    };
-
-    const updatedList = conversations.map((c) => (c.id === activeChatId ? updatedConv : c));
-    if (!conversations.some((c) => c.id === activeChatId)) {
-      updatedList.unshift(updatedConv);
-    }
-    setConversations(updatedList);
-    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(updatedList));
-
-    syncConversationToDb(updatedConv);
-
-    setLoading(true);
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-          messages: updatedMessages,
-          model: selectedModel,
-          systemInstruction: systemPrompt,
-          customApiKey: apiKey,
-        }),
-      });
-
-      const responseText = await response.text();
-      let data = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error("Failed to parse JSON response:", responseText);
-      }
-
-      if (!response.ok || data.error) {
-        if (data.isKeyMissing || response.status === 401) {
-          setSettingsOpen(true);
-        }
-        throw new Error(data.error || `Request failed with status ${response.status}`);
-      }
-
-      const aiMessage = {
-        role: "assistant",
-        content: data.reply,
-        model: selectedModel,
-        timestamp: new Date().toISOString(),
-      };
-
-      const finalConv = {
-        id: activeChatId,
-        title: autoTitle,
-        updatedAt: new Date().toISOString(),
-        messages: [...updatedMessages, aiMessage],
-      };
-
-      const finalList = updatedList.map((c) => (c.id === activeChatId ? finalConv : c));
-      setConversations(finalList);
-      secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(finalList));
-
-      syncConversationToDb(finalConv);
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        console.error("Chat Error:", err);
-        setErrorMessage(err.message || "Something went wrong. Please check your network connection.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    await streamAIResponse(updatedMessages, activeChatId, autoTitle);
   };
 
-  // Stop generation
+  // Retry/Edit prompt in history
+  const handleRetryUserPrompt = async (newText, messageIndex) => {
+    if (!newText.trim() || loading) return;
+    setErrorMessage(null);
+
+    const targetConv = currentConversation;
+    if (!targetConv) return;
+
+    const sliced = targetConv.messages.slice(0, messageIndex);
+    const updatedUserMsg = {
+      role: "user",
+      content: newText,
+      timestamp: new Date().toISOString(),
+    };
+    const newMessages = [...sliced, updatedUserMsg];
+
+    await streamAIResponse(newMessages, currentId, targetConv.title || "Conversation");
+  };
+
+  // Stop active streaming generation
   const handleStopGeneration = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -468,72 +444,7 @@ export default function Home() {
     if (lastUserIndex === -1) return;
 
     const trimmedMessages = messages.slice(0, lastUserIndex + 1);
-    
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === currentId
-          ? {
-              ...c,
-              messages: trimmedMessages,
-            }
-          : c
-      )
-    );
-
-    setLoading(true);
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-          messages: trimmedMessages,
-          model: selectedModel,
-          systemInstruction: systemPrompt,
-          customApiKey: apiKey,
-        }),
-      });
-
-      const responseText = await response.text();
-      let data = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error("Failed to parse JSON response:", responseText);
-      }
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `Failed to regenerate response (${response.status})`);
-      }
-
-      const aiMessage = {
-        role: "assistant",
-        content: data.reply,
-        model: selectedModel,
-        timestamp: new Date().toISOString(),
-      };
-
-      const finalConv = {
-        id: currentId,
-        title: currentConversation?.title || "Conversation",
-        updatedAt: new Date().toISOString(),
-        messages: [...trimmedMessages, aiMessage],
-      };
-
-      setConversations((prev) =>
-        prev.map((c) => (c.id === currentId ? finalConv : c))
-      );
-
-      syncConversationToDb(finalConv);
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        setErrorMessage(err.message || "Failed to regenerate response.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    await streamAIResponse(trimmedMessages, currentId, currentConversation?.title || "Conversation");
   };
 
   // Delete message turn
@@ -610,11 +521,7 @@ export default function Home() {
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:bg-indigo-600/25 transition-colors"
               >
                 <span className="w-4 h-4 rounded-[2px] bg-indigo-600 text-[10px] text-white flex items-center justify-center font-bold">
-                  {user.avatar?.startsWith("http") ? (
-                    <img src={user.avatar} alt="" className="w-full h-full rounded-[2px] object-cover" />
-                  ) : (
-                    user.avatar || user.name?.slice(0, 1).toUpperCase()
-                  )}
+                  {user.avatar || user.name?.slice(0, 1).toUpperCase()}
                 </span>
                 <span className="hidden lg:inline-block truncate max-w-[90px]">{user.name}</span>
               </button>
@@ -672,21 +579,6 @@ export default function Home() {
                   />
                 );
               })}
-
-              {/* Thinking indicator */}
-              {loading && (
-                <div className="flex gap-3.5 p-4 md:p-5 bg-slate-900/40 border-y border-slate-800/40">
-                  <YashLogo size={28} />
-                  <div className="flex-1 flex items-center gap-2 text-slate-400 text-xs">
-                    <span className="font-semibold text-slate-300">Yash AI is generating</span>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-[2px] bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Error banner */}
               {errorMessage && (

@@ -57,7 +57,7 @@ export async function POST(request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // List of models to try in order of preference
+    // Preferred models for instant response
     const requestedModel = model || "gemini-flash-latest";
     const modelsToTry = [
       requestedModel,
@@ -66,51 +66,75 @@ export async function POST(request) {
       "gemini-3.7-flash",
     ].filter((v, i, a) => a.indexOf(v) === i);
 
-    let replyText = "";
-    let modelUsed = requestedModel;
-    let lastError = null;
+    // Create ReadableStream for real-time token streaming
+    const encoder = new TextEncoder();
 
-    // 1. Try GoogleGenAI SDK models
-    for (const m of modelsToTry) {
-      try {
-        const response = await ai.models.generateContent({
-          model: m,
-          contents: formattedContents,
-          config,
-        });
+    const stream = new ReadableStream({
+      async start(controller) {
+        let streamSuccess = false;
 
-        replyText = response.text || "";
-        modelUsed = m;
-        lastError = null;
-        if (replyText) break;
-      } catch (err) {
-        console.warn(`Model ${m} attempt notice:`, err.message);
-        lastError = err;
-      }
-    }
+        // 1. Try GoogleGenAI SDK streaming
+        for (const m of modelsToTry) {
+          try {
+            const responseStream = await ai.models.generateContentStream({
+              model: m,
+              contents: formattedContents,
+              config,
+            });
 
-    // 2. Resilient fallback to @google/generative-ai
-    if (!replyText) {
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const lastUserPrompt = validMessages[validMessages.length - 1].content;
-        const result = await fallbackModel.generateContent(lastUserPrompt);
-        replyText = result.response.text();
-        modelUsed = "gemini-1.5-flash";
-        lastError = null;
-      } catch (e2) {
-        console.warn("Fallback SDK attempt notice:", e2.message);
-      }
-    }
+            for await (const chunk of responseStream) {
+              const text = chunk.text || "";
+              if (text) {
+                controller.enqueue(encoder.encode(text));
+                streamSuccess = true;
+              }
+            }
 
-    if (lastError && !replyText) {
-      throw lastError;
-    }
+            if (streamSuccess) break;
+          } catch (err) {
+            console.warn(`Streaming attempt for model ${m} notice:`, err.message);
+          }
+        }
 
-    return NextResponse.json({
-      reply: replyText || "I received your message, but no text response was produced.",
-      modelUsed,
+        // 2. Fallback streaming with @google/generative-ai
+        if (!streamSuccess) {
+          try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const lastPrompt = validMessages[validMessages.length - 1].content;
+            const resultStream = await fallbackModel.generateContentStream(lastPrompt);
+
+            for await (const chunk of resultStream.stream) {
+              const text = chunk.text();
+              if (text) {
+                controller.enqueue(encoder.encode(text));
+                streamSuccess = true;
+              }
+            }
+          } catch (e2) {
+            console.warn("Fallback streaming notice:", e2.message);
+          }
+        }
+
+        if (!streamSuccess) {
+          controller.enqueue(
+            encoder.encode(
+              "I apologize, but the response could not be generated at this moment. Please check your API rate limits or try again in a few seconds."
+            )
+          );
+        }
+
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (error) {
     console.error("Yash AI Route Error:", error);
@@ -119,9 +143,9 @@ export async function POST(request) {
     let friendlyMessage = errorMessage;
 
     if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
-      friendlyMessage = "Your Gemini API Key is invalid. Please verify your key in Settings (⚙️) from Google AI Studio.";
+      friendlyMessage = "Your Gemini API Key is invalid. Please verify your key in Settings (⚙️).";
     } else if (errorMessage.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("429")) {
-      friendlyMessage = "Google API free tier rate limit reached. Please click 'Retry' in 5-10 seconds.";
+      friendlyMessage = "Google API free tier quota limit reached. Please retry in a few seconds.";
     }
 
     return NextResponse.json(
