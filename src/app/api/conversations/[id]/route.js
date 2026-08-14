@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
 import { getAuthUser } from "@/lib/auth";
 
-// GET /api/conversations/[id]
+// GET /api/conversations/[id] from MongoDB Atlas
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
 
     const conn = await connectToDatabase();
     if (!conn) {
-      return NextResponse.json({ error: "Database offline", isOffline: true }, { status: 200 });
+      return NextResponse.json({ error: "Database offline" }, { status: 503 });
     }
 
     const conversation = await Conversation.findOne({ id, userId }).lean();
@@ -21,11 +21,11 @@ export async function GET(request, { params }) {
     }
     return NextResponse.json({ conversation });
   } catch (error) {
-    return NextResponse.json({ error: error.message, isOffline: true }, { status: 200 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// DELETE /api/conversations/[id]
+// DELETE /api/conversations/[id] from MongoDB Atlas
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
@@ -36,13 +36,13 @@ export async function DELETE(request, { params }) {
     if (conn) {
       await Conversation.findOneAndDelete({ id, userId });
     }
-    return NextResponse.json({ success: true, message: `Conversation ${id} deleted.` });
+    return NextResponse.json({ success: true, message: `Conversation ${id} deleted from MongoDB Atlas.` });
   } catch (error) {
-    return NextResponse.json({ success: true, isOffline: true });
+    return NextResponse.json({ success: true });
   }
 }
 
-// PATCH /api/conversations/[id]
+// PATCH /api/conversations/[id] in MongoDB Atlas
 export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
@@ -61,8 +61,8 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: true, conversation: updated });
     }
 
-    return NextResponse.json({ success: true, isOffline: true });
+    return NextResponse.json({ success: false, error: "Database offline" }, { status: 503 });
   } catch (error) {
-    return NextResponse.json({ success: true, isOffline: true });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

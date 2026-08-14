@@ -2,33 +2,27 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
 import { getAuthUser } from "@/lib/auth";
-import { readLocalData, writeLocalData } from "@/lib/localStore";
 
-// GET /api/conversations — Fetch conversations for current user
+// GET /api/conversations — Fetch conversations for current user from MongoDB Atlas
 export async function GET(request) {
   try {
     const authUser = await getAuthUser(request);
     const userId = authUser?.userId || "guest";
 
     const conn = await connectToDatabase();
-    if (conn) {
-      const conversations = await Conversation.find({ userId }).sort({ updatedAt: -1 }).lean();
-      return NextResponse.json({ conversations: conversations || [] });
+    if (!conn) {
+      return NextResponse.json({ conversations: [], error: "MongoDB Atlas offline" });
     }
 
-    // Local fallback
-    const all = readLocalData("conversations.json", []);
-    const userConvs = all.filter((c) => c.userId === userId);
-    userConvs.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-    return NextResponse.json({ conversations: userConvs, isOffline: true });
+    const conversations = await Conversation.find({ userId }).sort({ updatedAt: -1 }).lean();
+    return NextResponse.json({ conversations: conversations || [] });
   } catch (error) {
-    console.warn("GET /api/conversations fallback:", error.message);
-    const all = readLocalData("conversations.json", []);
-    return NextResponse.json({ conversations: all, isOffline: true });
+    console.warn("GET /api/conversations MongoDB error:", error.message);
+    return NextResponse.json({ conversations: [], error: error.message });
   }
 }
 
-// POST /api/conversations — Save or update conversation for user
+// POST /api/conversations — Save or update conversation directly in MongoDB Atlas
 export async function POST(request) {
   try {
     const authUser = await getAuthUser(request);
@@ -45,49 +39,30 @@ export async function POST(request) {
     }
 
     const conn = await connectToDatabase();
-    if (conn) {
-      const updated = await Conversation.findOneAndUpdate(
-        { id, userId },
-        { 
-          id, 
-          userId,
-          title: title || "New Conversation", 
-          messages: messages || [],
-          updatedAt: new Date() 
-        },
-        { upsert: true, returnDocument: 'after' }
-      );
-      return NextResponse.json({ success: true, conversation: updated });
+    if (!conn) {
+      return NextResponse.json({ success: false, error: "MongoDB Atlas offline" });
     }
 
-    // Local fallback
-    const all = readLocalData("conversations.json", []);
-    const index = all.findIndex((c) => c.id === id && c.userId === userId);
-    const now = new Date().toISOString();
-    const convObj = {
-      id,
-      userId,
-      title: title || "New Conversation",
-      messages: messages || [],
-      updatedAt: now,
-      createdAt: index !== -1 ? all[index].createdAt : now,
-    };
+    const updated = await Conversation.findOneAndUpdate(
+      { id, userId },
+      { 
+        id, 
+        userId,
+        title: title || "New Conversation", 
+        messages: messages || [],
+        updatedAt: new Date() 
+      },
+      { upsert: true, returnDocument: 'after' }
+    );
 
-    if (index !== -1) {
-      all[index] = convObj;
-    } else {
-      all.unshift(convObj);
-    }
-
-    writeLocalData("conversations.json", all);
-    return NextResponse.json({ success: true, conversation: convObj, isOffline: true });
+    return NextResponse.json({ success: true, conversation: updated });
   } catch (error) {
-    console.warn("POST /api/conversations fallback:", error.message);
-    return NextResponse.json({ success: true, isOffline: true });
+    console.warn("POST /api/conversations MongoDB error:", error.message);
+    return NextResponse.json({ success: false, error: error.message });
   }
 }
 
-// DELETE /api/conversations — Delete all conversations for current user
+// DELETE /api/conversations — Delete all conversations for current user in MongoDB Atlas
 export async function DELETE(request) {
   try {
     const authUser = await getAuthUser(request);
@@ -98,12 +73,7 @@ export async function DELETE(request) {
       await Conversation.deleteMany({ userId });
     }
 
-    // Local fallback
-    const all = readLocalData("conversations.json", []);
-    const filtered = all.filter((c) => c.userId !== userId);
-    writeLocalData("conversations.json", filtered);
-
-    return NextResponse.json({ success: true, message: "All conversations deleted." });
+    return NextResponse.json({ success: true, message: "All conversations deleted from MongoDB Atlas." });
   } catch (error) {
     return NextResponse.json({ success: true });
   }

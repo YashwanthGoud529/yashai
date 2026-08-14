@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { signToken, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
-import { readLocalData, writeLocalData } from "@/lib/localStore";
 
 export async function POST(request) {
   try {
@@ -16,63 +15,46 @@ export async function POST(request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const cleanName = (name || "Google Developer").trim();
+    const cleanName = (name || "Google User").trim();
     const initials = cleanName
       .split(" ")
       .map((p) => p[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "GD";
+      .toUpperCase() || "GU";
 
     const conn = await connectToDatabase();
-    let user = null;
-    let userId = null;
-
-    if (conn) {
-      user = await User.findOne({
-        $or: [{ googleId: googleId || "google_dummy" }, { email: normalizedEmail }],
-      });
-
-      if (!user) {
-        user = await User.create({
-          name: cleanName,
-          email: normalizedEmail,
-          googleId: googleId || `g_${Date.now()}`,
-          avatar: initials,
-          provider: "google",
-          credits: 100,
-        });
-      } else {
-        if (!user.googleId && googleId) user.googleId = googleId;
-        user.avatar = initials;
-        await user.save();
-      }
-
-      userId = user._id.toString();
-    } else {
-      const users = readLocalData("users.json", []);
-      user = users.find((u) => u.email === normalizedEmail || u.googleId === googleId);
-
-      if (!user) {
-        userId = `usr_g_${Date.now()}`;
-        user = {
-          _id: userId,
-          name: cleanName,
-          email: normalizedEmail,
-          googleId: googleId || `g_${Date.now()}`,
-          avatar: initials,
-          provider: "google",
-          credits: 100,
-          createdAt: new Date().toISOString(),
-        };
-        users.push(user);
-        writeLocalData("users.json", users);
-      } else {
-        userId = user._id;
-        user.avatar = initials;
-        writeLocalData("users.json", users);
-      }
+    if (!conn) {
+      return NextResponse.json(
+        { error: "Could not connect to MongoDB Atlas database." },
+        { status: 503 }
+      );
     }
+
+    // Find or create in MongoDB Atlas
+    let user = await User.findOne({
+      $or: [{ googleId: googleId || "google_dummy" }, { email: normalizedEmail }],
+    });
+
+    if (!user) {
+      user = await User.create({
+        name: cleanName,
+        email: normalizedEmail,
+        googleId: googleId || `g_${Date.now()}`,
+        avatar: initials,
+        provider: "google",
+        credits: 100,
+      });
+      console.log("✅ Created new Google user in MongoDB Atlas:", user.email);
+    } else {
+      if (!user.googleId && googleId) user.googleId = googleId;
+      user.avatar = initials;
+      user.provider = "google";
+      await user.save();
+      console.log("✅ Found existing Google user in MongoDB Atlas:", user.email);
+    }
+
+    const userId = user._id.toString();
 
     const userPayload = {
       userId,
@@ -95,7 +77,7 @@ export async function POST(request) {
       success: true,
       user: userResponse,
       token,
-      message: "Successfully signed in with Google!",
+      message: "Successfully authenticated with Google in MongoDB Atlas!",
     });
 
     response.cookies.set({
@@ -105,9 +87,9 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
-    console.error("Google Auth error:", error);
+    console.error("Google MongoDB error:", error);
     return NextResponse.json(
-      { error: error.message || "Google authentication failed." },
+      { error: error.message || "Google authentication failed in MongoDB." },
       { status: 500 }
     );
   }

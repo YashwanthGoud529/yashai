@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { signToken, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
-import { readLocalData } from "@/lib/localStore";
 
 export async function POST(request) {
   try {
@@ -19,37 +18,34 @@ export async function POST(request) {
     const normalizedEmail = email.toLowerCase().trim();
     const conn = await connectToDatabase();
 
-    let user = null;
-    let userId = null;
-
-    if (conn) {
-      user = await User.findOne({ email: normalizedEmail });
-      if (user) {
-        userId = user._id.toString();
-      }
-    } else {
-      const users = readLocalData("users.json", []);
-      user = users.find((u) => u.email === normalizedEmail);
-      if (user) {
-        userId = user._id;
-      }
+    if (!conn) {
+      return NextResponse.json(
+        { error: "Could not connect to MongoDB Atlas database." },
+        { status: 503 }
+      );
     }
 
+    // Find user in MongoDB Atlas
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid email or password. Please try again." },
+        { error: "No account found with this email in MongoDB Atlas. Please register first." },
         { status: 401 }
       );
     }
 
     // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return NextResponse.json(
-        { error: "Invalid email or password. Please try again." },
-        { status: 401 }
-      );
+    if (user.password) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return NextResponse.json(
+          { error: "Invalid password. Please try again." },
+          { status: 401 }
+        );
+      }
     }
+
+    const userId = user._id.toString();
 
     const userPayload = {
       userId,
@@ -65,13 +61,14 @@ export async function POST(request) {
       email: user.email,
       avatar: user.avatar || user.name.slice(0, 2).toUpperCase(),
       credits: user.credits ?? 100,
+      provider: user.provider || "local",
     };
 
     const response = NextResponse.json({
       success: true,
       user: userResponse,
       token,
-      message: "Logged in successfully.",
+      message: "Logged in successfully from MongoDB Atlas.",
     });
 
     response.cookies.set({

@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { signToken, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
-import { readLocalData, writeLocalData } from "@/lib/localStore";
 
 export async function POST(request) {
   try {
@@ -33,86 +32,68 @@ export async function POST(request) {
     const normalizedEmail = email.toLowerCase().trim();
     const conn = await connectToDatabase();
 
+    if (!conn) {
+      return NextResponse.json(
+        { error: "Could not connect to MongoDB Atlas database. Please check connection string." },
+        { status: 503 }
+      );
+    }
+
+    // Check if user exists in MongoDB
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "An account with this email already exists in MongoDB. Please log in." },
+        { status: 409 }
+      );
+    }
+
     // Hash password with salt
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const initials = name.trim().slice(0, 2).toUpperCase();
 
-    let userResponse = null;
-    let userId = null;
+    const cleanName = name.trim();
+    const initials = cleanName
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "YG";
 
-    if (conn) {
-      const existingUser = await User.findOne({ email: normalizedEmail });
-      if (existingUser) {
-        return NextResponse.json(
-          { error: "An account with this email already exists. Please log in." },
-          { status: 409 }
-        );
-      }
+    // Save directly to MongoDB Atlas
+    const newUser = await User.create({
+      name: cleanName,
+      email: normalizedEmail,
+      password: hashedPassword,
+      avatar: initials,
+      provider: "local",
+      credits: 100,
+    });
 
-      const newUser = await User.create({
-        name: name.trim(),
-        email: normalizedEmail,
-        password: hashedPassword,
-        avatar: initials,
-        credits: 100,
-      });
-
-      userId = newUser._id.toString();
-      userResponse = {
-        id: userId,
-        name: newUser.name,
-        email: newUser.email,
-        avatar: newUser.avatar,
-        credits: newUser.credits,
-      };
-    } else {
-      // Local persistent store fallback
-      const users = readLocalData("users.json", []);
-      const exists = users.find((u) => u.email === normalizedEmail);
-      if (exists) {
-        return NextResponse.json(
-          { error: "An account with this email already exists. Please log in." },
-          { status: 409 }
-        );
-      }
-
-      userId = `usr_${Date.now()}`;
-      const newUser = {
-        _id: userId,
-        name: name.trim(),
-        email: normalizedEmail,
-        password: hashedPassword,
-        avatar: initials,
-        credits: 100,
-        createdAt: new Date().toISOString(),
-      };
-
-      users.push(newUser);
-      writeLocalData("users.json", users);
-
-      userResponse = {
-        id: userId,
-        name: newUser.name,
-        email: newUser.email,
-        avatar: newUser.avatar,
-        credits: newUser.credits,
-      };
-    }
+    const userId = newUser._id.toString();
 
     const userPayload = {
       userId,
       email: normalizedEmail,
-      name: name.trim(),
+      name: newUser.name,
     };
 
     const token = signToken(userPayload);
+
+    const userResponse = {
+      id: userId,
+      name: newUser.name,
+      email: newUser.email,
+      avatar: newUser.avatar,
+      credits: newUser.credits,
+      provider: "local",
+    };
 
     const response = NextResponse.json({
       success: true,
       user: userResponse,
       token,
-      message: "Account created successfully.",
+      message: "Account created and saved directly to MongoDB Atlas.",
     });
 
     response.cookies.set({
@@ -122,9 +103,9 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("MongoDB Atlas registration error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create account." },
+      { error: error.message || "Failed to create account in MongoDB." },
       { status: 500 }
     );
   }
