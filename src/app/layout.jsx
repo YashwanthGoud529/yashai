@@ -14,7 +14,6 @@ export default function RootLayout({ children }) {
     <html lang="en" className="dark h-full">
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
       </head>
       <body className="h-full bg-[#090a0f] text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
         {children}

@@ -56,19 +56,15 @@ export async function POST(request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Active models with confirmed quota
-    const requestedModel = model || "gemini-flash-lite-latest";
+    // Active high-throughput models with confirmed available quota
     const modelsToTry = [
-      requestedModel,
       "gemini-flash-lite-latest",
       "gemini-3.5-flash-lite",
       "gemini-3.6-flash",
       "gemini-3.1-flash-lite",
       "gemma-4-31b-it",
-      "gemini-flash-latest",
-      "gemini-3.5-flash",
-      "gemini-3.7-flash"
-    ].filter((v, i, a) => a.indexOf(v) === i);
+      model,
+    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
 
     const encoder = new TextEncoder();
 
