@@ -80,6 +80,18 @@ export default function Sidebar({
     setEditingId(null);
   };
 
+  const getUserInitials = () => {
+    if (!user) return "U";
+    if (user.name) {
+      const parts = user.name.trim().split(" ");
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return user.name.slice(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -289,14 +301,23 @@ export default function Sidebar({
 
           {/* User Account / Login Block */}
           {user ? (
-            <div className="flex items-center justify-between p-2 rounded-[4px] bg-slate-950 border border-slate-800">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="w-6 h-6 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-[11px] font-semibold shadow-xs shrink-0">
-                  {user.avatar || user.name?.slice(0, 2).toUpperCase() || "U"}
+            <div className="flex items-center justify-between p-2 rounded-[4px] bg-slate-950 border border-slate-800 overflow-hidden">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-7 h-7 rounded-[4px] bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-[11px] font-semibold shadow-xs shrink-0 overflow-hidden">
+                  {user.avatar && user.avatar.startsWith("http") ? (
+                    <img 
+                      src={user.avatar} 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <span>{getUserInitials()}</span>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold text-white truncate leading-tight">
-                    {user.name}
+                    {user.name || "User"}
                   </div>
                   <div className="text-[10px] text-slate-500 truncate leading-tight font-normal">
                     {user.email}
@@ -305,7 +326,7 @@ export default function Sidebar({
               </div>
               <button
                 onClick={onLogout}
-                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors ml-1"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors shrink-0 ml-1"
                 title="Log out"
               >
                 <LogOut className="w-3.5 h-3.5" />

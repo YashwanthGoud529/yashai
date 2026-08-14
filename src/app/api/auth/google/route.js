@@ -6,7 +6,7 @@ import { readLocalData, writeLocalData } from "@/lib/localStore";
 
 export async function POST(request) {
   try {
-    const { name, email, googleId, avatar } = await request.json();
+    const { name, email, googleId } = await request.json();
 
     if (!email || !email.trim()) {
       return NextResponse.json(
@@ -16,36 +16,40 @@ export async function POST(request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const cleanName = (name || "Google Developer").trim();
+    const initials = cleanName
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "GD";
+
     const conn = await connectToDatabase();
     let user = null;
     let userId = null;
 
     if (conn) {
-      // Find existing user by googleId or email
       user = await User.findOne({
         $or: [{ googleId: googleId || "google_dummy" }, { email: normalizedEmail }],
       });
 
       if (!user) {
-        // Create new user with Google profile
         user = await User.create({
-          name: name || "Google User",
+          name: cleanName,
           email: normalizedEmail,
           googleId: googleId || `g_${Date.now()}`,
-          avatar: avatar || (name || "G").slice(0, 2).toUpperCase(),
+          avatar: initials,
           provider: "google",
           credits: 100,
         });
       } else {
-        // Update avatar / name if empty
         if (!user.googleId && googleId) user.googleId = googleId;
-        if (avatar && (!user.avatar || user.avatar.length <= 2)) user.avatar = avatar;
+        user.avatar = initials;
         await user.save();
       }
 
       userId = user._id.toString();
     } else {
-      // Local fallback
       const users = readLocalData("users.json", []);
       user = users.find((u) => u.email === normalizedEmail || u.googleId === googleId);
 
@@ -53,10 +57,10 @@ export async function POST(request) {
         userId = `usr_g_${Date.now()}`;
         user = {
           _id: userId,
-          name: name || "Google User",
+          name: cleanName,
           email: normalizedEmail,
           googleId: googleId || `g_${Date.now()}`,
-          avatar: avatar || (name || "G").slice(0, 2).toUpperCase(),
+          avatar: initials,
           provider: "google",
           credits: 100,
           createdAt: new Date().toISOString(),
@@ -65,6 +69,8 @@ export async function POST(request) {
         writeLocalData("users.json", users);
       } else {
         userId = user._id;
+        user.avatar = initials;
+        writeLocalData("users.json", users);
       }
     }
 
@@ -80,7 +86,7 @@ export async function POST(request) {
       id: userId,
       name: user.name,
       email: user.email,
-      avatar: user.avatar || (user.name || "G").slice(0, 2).toUpperCase(),
+      avatar: initials,
       credits: user.credits ?? 100,
       provider: "google",
     };
