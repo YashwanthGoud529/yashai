@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Mic, MicOff, Square, CornerDownLeft } from "lucide-react";
+import { Send, Sparkles, Mic, MicOff, Square } from "lucide-react";
 
 export default function ChatInput({ 
   onSendMessage, 
@@ -15,7 +15,7 @@ export default function ChatInput({
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Auto-resize textarea based on input content
+  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -24,7 +24,7 @@ export default function ChatInput({
     }
   }, [input]);
 
-  // Speech-to-text initialization
+  // Speech recognition initialization
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -55,7 +55,7 @@ export default function ChatInput({
 
   const toggleVoice = () => {
     if (!recognitionRef.current) {
-      alert("Speech recognition is not supported in your current browser.");
+      alert("Speech recognition is not supported in your browser.");
       return;
     }
     if (isListening) {
@@ -84,8 +84,8 @@ export default function ChatInput({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-4 md:pb-6">
-      <div className="relative rounded-2xl bg-slate-900/90 border border-slate-800 focus-within:border-indigo-500/60 focus-within:ring-2 focus-within:ring-indigo-500/20 shadow-2xl transition-all duration-200 backdrop-blur-md">
+    <div className="w-full max-w-4xl mx-auto px-4 pb-3 md:pb-5">
+      <div className="relative rounded-[4px] bg-slate-900/90 border border-slate-800 focus-within:border-indigo-500/70 shadow-lg transition-all duration-150 backdrop-blur-md">
         
         {/* Textarea */}
         <textarea
@@ -96,36 +96,36 @@ export default function ChatInput({
           placeholder="Ask Gemini anything... (Shift+Enter for new line)"
           disabled={disabled}
           rows={1}
-          className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 px-4 pt-3.5 pb-12 outline-none resize-none text-sm md:text-base leading-relaxed max-h-[180px]"
+          className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 px-3.5 pt-3 pb-11 outline-none resize-none text-xs md:text-sm leading-relaxed max-h-[180px] font-normal"
         />
 
         {/* Footer inside input box */}
-        <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/40 pt-2">
+        <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/50 pt-1.5">
           {/* Left badges */}
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-mono text-[11px] border border-indigo-500/20">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-400 font-mono text-[11px] border border-indigo-500/20 font-semibold">
               <Sparkles className="w-3 h-3 text-indigo-400" />
               {modelName}
             </span>
-            <span className="hidden sm:inline-block text-[11px] text-slate-500">
+            <span className="hidden sm:inline-block text-[11px] text-slate-500 font-normal">
               {input.length} chars
             </span>
           </div>
 
-          {/* Right Action buttons */}
+          {/* Right Action buttons with 4px radius */}
           <div className="flex items-center gap-1.5">
             {/* Voice input */}
             <button
               type="button"
               onClick={toggleVoice}
-              className={`p-2 rounded-xl transition-colors ${
+              className={`p-1.5 rounded-[4px] transition-colors ${
                 isListening
                   ? "bg-rose-600 text-white animate-pulse"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
               }`}
               title={isListening ? "Listening... click to stop" : "Voice input"}
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
             </button>
 
             {/* Send / Stop */}
@@ -133,10 +133,10 @@ export default function ChatInput({
               <button
                 type="button"
                 onClick={onStop}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-md shadow-rose-600/20 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-all"
                 title="Stop generation"
               >
-                <Square className="w-3.5 h-3.5 fill-current" />
+                <Square className="w-3 h-3 fill-current" />
                 <span>Stop</span>
               </button>
             ) : (
@@ -144,16 +144,16 @@ export default function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() || disabled}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 disabled:hover:from-indigo-600 disabled:hover:to-violet-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-indigo-600 hover:bg-indigo-500 disabled:opacity-35 disabled:hover:bg-indigo-600 text-white text-xs font-semibold shadow-sm transition-all"
               >
                 <span>Send</span>
-                <Send className="w-3.5 h-3.5" />
+                <Send className="w-3 h-3" />
               </button>
             )}
           </div>
         </div>
       </div>
-      <div className="text-center mt-2 text-[11px] text-slate-500">
+      <div className="text-center mt-1.5 text-[11px] text-slate-500 font-normal">
         AI responses may occasionally contain inaccuracies. Verify critical details.
       </div>
     </div>

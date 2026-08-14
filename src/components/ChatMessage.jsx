@@ -28,20 +28,20 @@ function CodeBlock({ node, inline, className, children, ...props }) {
 
   if (!inline && match) {
     return (
-      <div className="my-4 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950/80 shadow-lg">
-        <div className="flex items-center justify-between px-4 py-2 bg-slate-900/90 border-b border-slate-800 text-xs text-slate-400 font-mono">
-          <span className="uppercase font-semibold text-indigo-400 tracking-wider">
+      <div className="my-3.5 rounded-[4px] overflow-hidden border border-slate-700/60 bg-slate-950/90 shadow-md">
+        <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-400 font-mono">
+          <span className="uppercase font-semibold text-indigo-400 tracking-wider text-[11px]">
             {language}
           </span>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all text-xs border border-slate-700"
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all text-xs border border-slate-700"
             title="Copy code"
           >
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Copied!</span>
+                <span className="text-emerald-400 font-semibold">Copied!</span>
               </>
             ) : (
               <>
@@ -51,7 +51,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
             )}
           </button>
         </div>
-        <div className="p-4 overflow-x-auto text-sm font-mono leading-relaxed text-slate-200">
+        <div className="p-3.5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed text-slate-200">
           <code className={className} {...props}>
             {children}
           </code>
@@ -85,30 +85,30 @@ export default function ChatMessage({
 
   return (
     <div
-      className={`group relative flex gap-4 p-4 md:p-6 transition-colors ${
+      className={`group relative flex gap-3.5 p-4 md:p-5 transition-colors ${
         isUser
           ? "bg-transparent"
-          : "bg-slate-900/40 border-y border-slate-800/30 backdrop-blur-sm"
+          : "bg-slate-900/40 border-y border-slate-800/40 backdrop-blur-xs"
       }`}
     >
-      {/* Avatar */}
+      {/* Avatar with 4px radius */}
       <div className="shrink-0">
         {isUser ? (
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-            <User className="w-5 h-5" />
+          <div className="w-7 h-7 rounded-[4px] bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+            <User className="w-4 h-4" />
           </div>
         ) : (
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 ring-1 ring-white/20">
-            <Sparkles className="w-5 h-5 animate-pulse text-cyan-200" />
+          <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm ring-1 ring-white/10">
+            <Sparkles className="w-4 h-4 text-cyan-200" />
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-2">
+      <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-slate-200">
+            <span className="font-semibold text-xs text-slate-200">
               {isUser ? "You" : "Gemini AI"}
             </span>
             {message.timestamp && (
@@ -117,43 +117,43 @@ export default function ChatMessage({
               </span>
             )}
             {!isUser && message.model && (
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-[4px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
                 {message.model}
               </span>
             )}
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons with 4px radius */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={handleCopyMessage}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               title="Copy message"
             >
               {copied ? (
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
               ) : (
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3.5 h-3.5" />
               )}
             </button>
 
             {!isUser && isLastAI && onRegenerate && (
               <button
                 onClick={onRegenerate}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
                 title="Regenerate response"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             )}
 
             {onDelete && (
               <button
                 onClick={() => onDelete(index)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
                 title="Delete message"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
