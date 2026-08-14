@@ -11,7 +11,8 @@ import {
   Code, 
   Lightbulb, 
   FileText,
-  CornerDownLeft
+  CornerDownLeft,
+  Wand2
 } from "lucide-react";
 
 export default function ChatInput({ 
@@ -127,41 +128,47 @@ export default function ChatInput({
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 pb-3 sm:pb-5">
       
-      {/* Quick Prompt Modifier Chips */}
+      {/* Quick Prompt Modifier Chips with spring animations */}
       <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           type="button"
           onClick={() => handleInsertPrefix("Explain this step by step:")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/85 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap shadow-xs"
         >
           <Sparkles className="w-3 h-3 text-blue-400" />
           <span>Explain Step-by-Step</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           type="button"
           onClick={() => handleInsertPrefix("Write clean code with comments for:")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/85 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap shadow-xs"
         >
           <Code className="w-3 h-3 text-blue-400" />
           <span>Write Code</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           type="button"
           onClick={() => handleInsertPrefix("Summarize the key takeaways of:")}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-[4px] bg-slate-900/85 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-blue-300 text-[11px] font-normal transition-colors whitespace-nowrap shadow-xs"
         >
           <FileText className="w-3 h-3 text-blue-400" />
           <span>Summarize</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Floating Glassmorphic Input Composer */}
       <motion.div 
         animate={{ 
           borderColor: isFocused ? "#3e55af" : "rgba(30, 41, 59, 0.8)",
-          boxShadow: isFocused ? "0 8px 30px -10px rgba(2, 77, 190, 0.4)" : "0 4px 20px -5px rgba(0, 0, 0, 0.5)"
+          boxShadow: isFocused ? "0 8px 30px -8px rgba(2, 77, 190, 0.45)" : "0 4px 20px -5px rgba(0, 0, 0, 0.5)"
         }}
         className="relative rounded-[4px] bg-slate-900/90 border transition-all duration-200 backdrop-blur-md overflow-hidden"
       >
@@ -183,10 +190,13 @@ export default function ChatInput({
         <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/60 pt-1.5">
           {/* Left Badges */}
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#3e55af]/15 text-blue-300 font-mono text-[11px] border border-[#3e55af]/30 font-semibold">
+            <motion.span 
+              whileHover={{ scale: 1.04 }}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#3e55af]/15 text-blue-300 font-mono text-[11px] border border-[#3e55af]/30 font-semibold cursor-pointer"
+            >
               <Sparkles className="w-3 h-3 text-blue-400" />
               {modelName}
-            </span>
+            </motion.span>
             <span className="hidden sm:inline-block text-[11px] text-slate-500 font-normal">
               {input.length} chars
             </span>
@@ -194,23 +204,33 @@ export default function ChatInput({
 
           {/* Right Action buttons */}
           <div className="flex items-center gap-1.5">
-            {/* Voice input */}
+            {/* Voice input with animated equalizer bars */}
             <button
               type="button"
               onClick={toggleVoice}
-              className={`p-1.5 rounded-[4px] transition-colors relative ${
+              className={`p-1.5 rounded-[4px] transition-colors relative flex items-center justify-center ${
                 isListening
-                  ? "bg-rose-600 text-white animate-pulse"
+                  ? "bg-rose-600 text-white shadow-md shadow-rose-600/30"
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
               }`}
               title={isListening ? "Listening... click to stop" : "Voice input"}
             >
-              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              {isListening ? (
+                <div className="flex items-center gap-0.5 h-3.5 px-0.5">
+                  <span className="w-0.5 bg-white rounded-full animate-bounce h-2" style={{ animationDelay: '0ms' }} />
+                  <span className="w-0.5 bg-white rounded-full animate-bounce h-3.5" style={{ animationDelay: '150ms' }} />
+                  <span className="w-0.5 bg-white rounded-full animate-bounce h-2" style={{ animationDelay: '300ms' }} />
+                </div>
+              ) : (
+                <Mic className="w-3.5 h-3.5" />
+              )}
             </button>
 
-            {/* Send / Stop */}
+            {/* Send / Stop with Framer Motion spring */}
             {loading ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={onStop}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-all animate-pulse"
@@ -218,15 +238,15 @@ export default function ChatInput({
               >
                 <Square className="w-3 h-3 fill-current" />
                 <span>Stop</span>
-              </button>
+              </motion.button>
             ) : (
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() || disabled}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-brand hover-bg-brand disabled:opacity-35 text-white text-xs font-semibold shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-brand hover-bg-brand disabled:opacity-35 text-white text-xs font-semibold shadow-sm transition-all relative overflow-hidden"
               >
                 <span>Send</span>
                 <CornerDownLeft className="w-3 h-3" />

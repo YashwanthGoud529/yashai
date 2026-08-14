@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -19,7 +19,7 @@ import {
   Sparkles
 } from "lucide-react";
 
-// Flat, high-contrast code block with 0 overlay and 1-click copy confetti
+// Flat, high-contrast code block with 0 overlay and 1-click multi-color copy confetti
 function CodeBlock({ node, inline, className, children, ...props }) {
   const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
@@ -33,13 +33,13 @@ function CodeBlock({ node, inline, className, children, ...props }) {
     try {
       const rect = e.target.getBoundingClientRect();
       confetti({
-        particleCount: 20,
-        spread: 45,
+        particleCount: 25,
+        spread: 55,
         origin: {
           x: rect.left / window.innerWidth,
           y: rect.top / window.innerHeight,
         },
-        colors: ["#3e55af", "#024dbe", "#60a5fa"],
+        colors: ["#3e55af", "#024dbe", "#60a5fa", "#38bdf8", "#818cf8"],
       });
     } catch (err) {}
 
@@ -55,13 +55,20 @@ function CodeBlock({ node, inline, className, children, ...props }) {
   }
 
   return (
-    <div className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden shadow-md">
+    <motion.div 
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="my-3 rounded-[4px] border border-slate-800 bg-[#0d1117] overflow-hidden shadow-md group"
+    >
       {/* Code Header */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border-b border-slate-800 text-xs">
         <span className="text-slate-400 font-mono text-[11px] uppercase tracking-wider font-semibold">
           {language || "code"}
         </span>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           type="button"
           onClick={handleCopy}
           className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded-[4px] hover:bg-slate-800 transition-colors"
@@ -77,7 +84,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
               <span>Copy</span>
             </>
           )}
-        </button>
+        </motion.button>
       </div>
 
       {/* Code Body */}
@@ -86,7 +93,7 @@ function CodeBlock({ node, inline, className, children, ...props }) {
           {children}
         </code>
       </pre>
-    </div>
+    </motion.div>
   );
 }
 
@@ -121,9 +128,9 @@ export default function ChatMessage({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className={`group relative flex gap-3.5 p-4 md:p-5 transition-colors ${
         isUser
           ? "bg-transparent"
@@ -133,9 +140,12 @@ export default function ChatMessage({
       {/* Avatar */}
       <div className="shrink-0 pt-0.5">
         {isUser ? (
-          <div className="w-7 h-7 rounded-[4px] bg-brand flex items-center justify-center text-white shadow-xs border border-[#3e55af]/50">
+          <motion.div 
+            whileHover={{ scale: 1.08 }}
+            className="w-7 h-7 rounded-[4px] bg-brand flex items-center justify-center text-white shadow-xs border border-[#3e55af]/50"
+          >
             <User className="w-4 h-4" />
-          </div>
+          </motion.div>
         ) : (
           <YashLogo size={28} />
         )}
@@ -160,10 +170,12 @@ export default function ChatMessage({
             )}
           </div>
 
-          {/* Action Buttons with 4px radius */}
+          {/* Action Buttons with 4px radius & spring hover */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Copy button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={handleCopyMessage}
               className="p-1.5 rounded-[4px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               title="Copy text"
@@ -173,23 +185,27 @@ export default function ChatMessage({
               ) : (
                 <Copy className="w-3.5 h-3.5" />
               )}
-            </button>
+            </motion.button>
 
             {/* User Message Recall & Edit Button */}
             {isUser && onRecall && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => onRecall(message.content)}
                 className="flex items-center gap-1 px-2 py-1 rounded-[4px] text-[11px] text-slate-400 hover:text-blue-300 hover:bg-slate-800 transition-colors font-normal"
                 title="Recall this prompt to input composer"
               >
                 <RotateCw className="w-3 h-3 text-blue-400" />
                 <span>Recall</span>
-              </button>
+              </motion.button>
             )}
 
             {/* Edit User Message */}
             {isUser && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => {
                   setEditText(message.content);
                   setIsEditing(!isEditing);
@@ -198,36 +214,44 @@ export default function ChatMessage({
                 title="Edit and resubmit prompt"
               >
                 <Pencil className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
             )}
 
             {/* Regenerate AI answer */}
             {!isUser && isLastAI && onRegenerate && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={onRegenerate}
                 className="p-1.5 rounded-[4px] text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors"
                 title="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
             )}
 
             {/* Delete message */}
             {onDelete && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => onDelete(index)}
                 className="p-1.5 rounded-[4px] text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors"
                 title="Delete message"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
 
         {/* Message Body or Inline Editor */}
         {isEditing ? (
-          <div className="space-y-2 pt-1">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-2 pt-1"
+          >
             <textarea
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
@@ -250,7 +274,7 @@ export default function ChatMessage({
                 <span>Save & Resubmit</span>
               </button>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <div className="chat-prose text-slate-200">
             {message.content ? (
@@ -282,13 +306,15 @@ export default function ChatMessage({
         {/* Unanswered User Prompt Fallback / Retry Prompt Button */}
         {isUser && isLastUserWithoutAI && onRetryUserPrompt && !isEditing && (
           <div className="pt-2 flex items-center gap-2">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => onRetryUserPrompt(message.content, index)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-[#3e55af]/20 hover:bg-[#3e55af]/30 border border-[#3e55af]/50 text-blue-200 hover:text-white text-xs font-semibold transition-all shadow-xs"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Retry Prompt with Yash AI</span>
-            </button>
+            </motion.button>
             {onRecall && (
               <button
                 onClick={() => onRecall(message.content)}

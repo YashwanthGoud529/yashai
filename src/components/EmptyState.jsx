@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import YashLogo from "./YashLogo";
+import CyberBackground from "./CyberBackground";
 import { 
   Code2, 
   Sparkles, 
@@ -12,7 +13,8 @@ import {
   Zap,
   Terminal,
   BrainCircuit,
-  FileCode
+  FileCode,
+  Flame
 } from "lucide-react";
 
 export default function EmptyState({ onSelectPrompt }) {
@@ -29,41 +31,37 @@ export default function EmptyState({ onSelectPrompt }) {
     {
       category: "code",
       title: "Build a Modern React Hook",
-      desc: "Write a custom useDebounce hook with TypeScript types and cleanup.",
+      desc: "Write a custom useDebounce hook with TypeScript types, cancel methods, and tests.",
       prompt: "Write a clean custom useDebounce hook in React with explanation and example usage.",
       icon: Code2,
       badge: "TypeScript",
-      gradient: "from-[#3e55af] to-[#024dbe]",
       accent: "text-blue-400 border-[#3e55af]/50",
     },
     {
       category: "code",
       title: "HTML5 & Tailwind Masterclass",
-      desc: "Explain HTML5 semantic structure with practical modern layout examples.",
+      desc: "Explain HTML5 semantic layout structure with practical responsive design patterns.",
       prompt: "Tell me about HTML with full code examples, semantic elements, and modern practices.",
       icon: FileCode,
       badge: "Frontend",
-      gradient: "from-[#3e55af] to-[#024dbe]",
       accent: "text-sky-400 border-sky-500/40",
     },
     {
       category: "architecture",
-      title: "Design Next.js App Architecture",
-      desc: "Architect a scalable SaaS directory structure with Server Actions & MongoDB.",
+      title: "Design Next.js SaaS Architecture",
+      desc: "Architect a production-ready Next.js SaaS folder layout with MongoDB Atlas & Auth.",
       prompt: "Architect a scalable Next.js 15+ SaaS folder structure with App Router, MongoDB Atlas, and Auth.",
       icon: Terminal,
       badge: "Fullstack",
-      gradient: "from-[#3e55af] to-[#024dbe]",
       accent: "text-indigo-400 border-indigo-500/40",
     },
     {
       category: "ideas",
       title: "Generate High-Impact AI SaaS Ideas",
-      desc: "Brainstorm 5 profitable AI micro-SaaS ideas with monetization strategies.",
+      desc: "Brainstorm 5 profitable AI micro-SaaS ideas with monetization strategies and tech stacks.",
       prompt: "Brainstorm 5 high-impact AI SaaS product ideas for developers in 2026 with unique selling points and monetization models.",
       icon: BrainCircuit,
       badge: "Strategy",
-      gradient: "from-[#3e55af] to-[#024dbe]",
       accent: "text-blue-300 border-blue-500/40",
     },
   ];
@@ -73,32 +71,50 @@ export default function EmptyState({ onSelectPrompt }) {
     : promptCards.filter(c => c.category === activeCategory);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 max-w-4xl mx-auto w-full relative overflow-hidden bg-cyber-grid">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 max-w-4xl mx-auto w-full relative overflow-hidden">
       
-      {/* Background Radial Glow with brand colors #3e55af / #024dbe */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#024dbe]/15 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-glow" />
+      {/* Anime.js / Motion Interactive Cyber Background */}
+      <CyberBackground />
 
-      {/* Hero Branding with Framer Motion */}
+      {/* Hero Ambient Radial Beam */}
       <motion.div 
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center space-y-3.5 mb-6"
-      >
-        {/* Glowing Hero Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-[4px] bg-[#3e55af]/15 border border-[#3e55af]/40 text-blue-200 text-xs font-semibold shadow-xs">
-          <Zap className="w-3.5 h-3.5 text-blue-400 fill-blue-400/30" />
-          <span>Yash AI 3.0 • Real-Time Streaming & MongoDB Atlas</span>
-        </div>
+        animate={{ 
+          scale: [1, 1.12, 1],
+          opacity: [0.3, 0.6, 0.3] 
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] bg-[#024dbe]/15 rounded-full blur-3xl pointer-events-none -z-10"
+      />
 
-        {/* Logo Monogram */}
+      {/* Hero Branding */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center space-y-3.5 mb-6 z-10"
+      >
+        {/* Animated Pill Badge (Kokonut UI Shimmer) */}
+        <motion.div 
+          whileHover={{ scale: 1.04 }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[4px] bg-[#3e55af]/15 border border-[#3e55af]/40 text-blue-200 text-xs font-semibold shadow-md backdrop-blur-md relative overflow-hidden"
+        >
+          {/* Moving Light Shimmer */}
+          <div className="absolute inset-0 animate-shimmer opacity-40 pointer-events-none" />
+          <Zap className="w-3.5 h-3.5 text-blue-400 fill-blue-400/40 animate-pulse" />
+          <span>Yash AI 3.0 • Real-Time Streaming & MongoDB Atlas</span>
+        </motion.div>
+
+        {/* Logo Monogram with floating hover */}
         <div className="flex justify-center my-2">
           <motion.div 
-            whileHover={{ scale: 1.05, rotate: 2 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15 }}
-            className="p-2 rounded-[4px] bg-slate-900/90 border border-slate-800 shadow-xl"
+            whileHover={{ scale: 1.1, rotate: [0, -2, 2, 0] }}
+            transition={{ type: "spring", stiffness: 350, damping: 15 }}
+            className="p-2.5 rounded-[4px] bg-slate-900/90 border border-slate-800 shadow-2xl relative"
           >
-            <YashLogo size={46} />
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#3e55af] to-[#024dbe] rounded-[6px] blur-sm opacity-35 animate-pulse" />
+            <div className="relative">
+              <YashLogo size={50} />
+            </div>
           </motion.div>
         </div>
 
@@ -107,84 +123,93 @@ export default function EmptyState({ onSelectPrompt }) {
           What would you like to build today?
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed font-normal">
-          Instant answers, code generation, system architecture, and deep analysis powered by Google Gemini.
+          Instant answers, code generation, system architecture, and deep reasoning powered by Google Gemini.
         </p>
       </motion.div>
 
-      {/* Category Pills (with brand gradient) */}
+      {/* Category Pills (Framer Motion spring tabs) */}
       <motion.div 
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex items-center justify-center flex-wrap gap-1.5 mb-5"
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="flex items-center justify-center flex-wrap gap-2 mb-6 z-10"
       >
         {categories.map((cat) => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
           return (
-            <button
+            <motion.button
               key={cat.id}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-xs font-semibold transition-all relative ${
                 isActive
-                  ? "bg-brand text-white shadow-xs border border-[#3e55af]"
-                  : "bg-slate-900/70 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200"
+                  ? "bg-brand text-white shadow-md border border-[#3e55af]"
+                  : "bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{cat.label}</span>
-            </button>
+            </motion.button>
           );
         })}
       </motion.div>
 
-      {/* Prompt Cards Grid */}
+      {/* Kokonut UI Animated Cards Grid with Border Beams */}
       <motion.div 
         layout
-        className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-3xl"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-3xl z-10"
       >
-        {filteredCards.map((card, idx) => {
-          const CardIcon = card.icon;
-          return (
-            <motion.div
-              key={card.title}
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: idx * 0.05 }}
-              whileHover={{ y: -3, scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={() => onSelectPrompt(card.prompt)}
-              className="glass-card group p-3.5 rounded-[4px] cursor-pointer flex flex-col justify-between relative overflow-hidden"
-            >
-              {/* Top brand gradient bar */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-brand opacity-0 group-hover:opacity-100 transition-opacity" />
+        <AnimatePresence mode="popLayout">
+          {filteredCards.map((card, idx) => {
+            const CardIcon = card.icon;
+            return (
+              <motion.div
+                key={card.title}
+                layout
+                initial={{ opacity: 0, scale: 0.94, y: 14 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 14 }}
+                transition={{ duration: 0.3, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onSelectPrompt(card.prompt)}
+                className="glass-card group p-4 rounded-[4px] cursor-pointer flex flex-col justify-between relative overflow-hidden shadow-lg border border-slate-800/90"
+              >
+                {/* Kokonut Rotating Border Beam on hover */}
+                <div className="absolute inset-0 border border-transparent group-hover:border-[#3e55af]/70 rounded-[4px] transition-colors pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-brand opacity-0 group-hover:opacity-100 transition-opacity" />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-[4px] bg-slate-900 border border-slate-800 text-blue-400 group-hover:text-white group-hover:bg-brand transition-colors">
-                      <CardIcon className="w-3.5 h-3.5" />
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <motion.div 
+                        whileHover={{ rotate: 10 }}
+                        className="p-1.5 rounded-[4px] bg-slate-900 border border-slate-800 text-blue-400 group-hover:text-white group-hover:bg-brand transition-colors"
+                      >
+                        <CardIcon className="w-3.5 h-3.5" />
+                      </motion.div>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] border ${card.accent} font-semibold`}>
+                        {card.badge}
+                      </span>
                     </div>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] border ${card.accent} font-semibold`}>
-                      {card.badge}
-                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-                </div>
 
-                <div>
-                  <h3 className="font-semibold text-xs text-slate-200 group-hover:text-white transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5 leading-relaxed font-normal">
-                    {card.desc}
-                  </p>
+                  <div>
+                    <h3 className="font-semibold text-xs text-slate-200 group-hover:text-white transition-colors">
+                      {card.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed font-normal">
+                      {card.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
