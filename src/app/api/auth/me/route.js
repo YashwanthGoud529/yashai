@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
 
 export async function GET(request) {
   try {
@@ -15,9 +15,23 @@ export async function GET(request) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    const user = await User.findById(authData.userId).select("-password").lean();
-    if (!user) {
-      return NextResponse.json({ user: null }, { status: 200 });
+    let user = null;
+    try {
+      user = await User.findById(authData.userId).select("-password").lean();
+    } catch (err) {
+      // Invalid ObjectId format from old mock data
+      user = null;
+    }
+
+    // If user not in MongoDB Atlas or belongs to old mock data, clear session cookie immediately
+    if (!user || user.email?.includes("yash.user_") || user.email === "demo@yashai.dev") {
+      const response = NextResponse.json({ user: null }, { status: 200 });
+      response.cookies.set({
+        ...AUTH_COOKIE_OPTIONS,
+        value: "",
+        maxAge: 0,
+      });
+      return response;
     }
 
     return NextResponse.json({
@@ -31,6 +45,12 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ user: null, error: error.message }, { status: 200 });
+    const response = NextResponse.json({ user: null }, { status: 200 });
+    response.cookies.set({
+      ...AUTH_COOKIE_OPTIONS,
+      value: "",
+      maxAge: 0,
+    });
+    return response;
   }
 }
