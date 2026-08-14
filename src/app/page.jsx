@@ -28,7 +28,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [recalledPrompt, setRecalledPrompt] = useState("");
   
-  // User settings (stored with secureStorage)
+  // User settings
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-flash-latest");
   const [systemPrompt, setSystemPrompt] = useState("");
@@ -56,8 +56,15 @@ export default function Home() {
     return null;
   };
 
-  // Fetch conversations for the current user from MongoDB Atlas
-  const fetchUserConversations = async () => {
+  // Fetch conversations strictly for authenticated user from MongoDB Atlas
+  const fetchUserConversations = async (currentUser) => {
+    // If not logged in, show 0 history (Privacy protection)
+    if (!currentUser) {
+      setConversations([]);
+      setCurrentId(null);
+      return;
+    }
+
     try {
       const res = await fetch("/api/conversations");
       if (res.ok) {
@@ -66,27 +73,13 @@ export default function Home() {
           setConversations(data.conversations);
           setCurrentId(data.conversations[0].id);
           return;
+        } else {
+          setConversations([]);
+          setCurrentId(null);
         }
       }
     } catch (err) {
       console.warn("Fetch conversations notice:", err);
-    }
-
-    // Secure local storage fallback
-    try {
-      const savedChats = secureStorage.getItem("yash_ai_chats_v1");
-      if (savedChats) {
-        const parsed = JSON.parse(savedChats);
-        setConversations(parsed);
-        if (parsed.length > 0) {
-          setCurrentId(parsed[0].id);
-        }
-      } else {
-        setConversations([]);
-        setCurrentId(null);
-      }
-    } catch (e) {
-      console.error("Storage notice:", e);
     }
   };
 
@@ -103,8 +96,8 @@ export default function Home() {
         const savedSysPrompt = secureStorage.getItem("gemini_system_prompt");
         if (savedSysPrompt) setSystemPrompt(savedSysPrompt);
 
-        await fetchUserSession();
-        await fetchUserConversations();
+        const activeUser = await fetchUserSession();
+        await fetchUserConversations(activeUser);
       } catch (err) {
         console.warn("Init notice:", err);
       }
@@ -116,15 +109,17 @@ export default function Home() {
   // Handle Authentication Success
   const handleAuthSuccess = async (authenticatedUser) => {
     setUser(authenticatedUser);
-    await fetchUserConversations();
+    await fetchUserConversations(authenticatedUser);
   };
 
-  // Handle Logout
+  // Handle Logout (Completely clears active history and cached state)
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
-      await fetchUserConversations();
+      setConversations([]);
+      setCurrentId(null);
+      secureStorage.removeItem("yash_ai_chats_v1");
     } catch (e) {
       console.error("Logout notice:", e);
     }
@@ -132,6 +127,7 @@ export default function Home() {
 
   // Sync conversation directly to MongoDB Atlas
   const syncConversationToDb = async (conversation) => {
+    if (!user) return; // Don't persist guest conversations to shared pool
     try {
       await fetch("/api/conversations", {
         method: "POST",
@@ -181,15 +177,16 @@ export default function Home() {
   const handleDeleteChat = async (id) => {
     const filtered = conversations.filter((c) => c.id !== id);
     setConversations(filtered);
-    secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(filtered));
     if (currentId === id) {
       setCurrentId(filtered.length > 0 ? filtered[0].id : null);
     }
 
-    try {
-      await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-    } catch (e) {
-      console.warn("Delete notice:", e);
+    if (user) {
+      try {
+        await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      } catch (e) {
+        console.warn("Delete notice:", e);
+      }
     }
   };
 
@@ -199,28 +196,32 @@ export default function Home() {
       prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
     );
 
-    try {
-      await fetch(`/api/conversations/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle }),
-      });
-    } catch (e) {
-      console.warn("Rename notice:", e);
+    if (user) {
+      try {
+        await fetch(`/api/conversations/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle }),
+        });
+      } catch (e) {
+        console.warn("Rename notice:", e);
+      }
     }
   };
 
   // Clear all chats
   const handleClearAllChats = async () => {
-    if (confirm("Are you sure you want to clear all chat conversations?")) {
+    if (confirm("Are you sure you want to clear your chat history?")) {
       setConversations([]);
       setCurrentId(null);
       secureStorage.removeItem("yash_ai_chats_v1");
 
-      try {
-        await fetch("/api/conversations", { method: "DELETE" });
-      } catch (e) {
-        console.warn("Clear notice:", e);
+      if (user) {
+        try {
+          await fetch("/api/conversations", { method: "DELETE" });
+        } catch (e) {
+          console.warn("Clear notice:", e);
+        }
       }
     }
   };
@@ -353,7 +354,7 @@ export default function Home() {
       setConversations((prev) =>
         prev.map((c) => (c.id === targetChatId ? finalConv : c))
       );
-      secureStorage.setItem("yash_ai_chats_v1", JSON.stringify(conversations));
+      
       syncConversationToDb(finalConv);
     } catch (err) {
       if (err.name !== "AbortError") {
@@ -520,8 +521,12 @@ export default function Home() {
                 onClick={() => setSidebarOpen(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:bg-indigo-600/25 transition-colors"
               >
-                <span className="w-4 h-4 rounded-[2px] bg-indigo-600 text-[10px] text-white flex items-center justify-center font-bold">
-                  {user.avatar || user.name?.slice(0, 1).toUpperCase()}
+                <span className="w-4 h-4 rounded-[2px] bg-indigo-600 text-[10px] text-white flex items-center justify-center font-bold overflow-hidden">
+                  {user.avatar && user.avatar.startsWith("http") ? (
+                    <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    user.avatar || user.name?.slice(0, 1).toUpperCase()
+                  )}
                 </span>
                 <span className="hidden lg:inline-block truncate max-w-[90px]">{user.name}</span>
               </button>

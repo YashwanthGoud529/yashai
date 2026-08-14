@@ -3,18 +3,25 @@ import { connectToDatabase } from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
 import { getAuthUser } from "@/lib/auth";
 
-// GET /api/conversations — Fetch conversations for current user from MongoDB Atlas
+// GET /api/conversations — Fetch private conversations exclusively for authenticated user
 export async function GET(request) {
   try {
     const authUser = await getAuthUser(request);
-    const userId = authUser?.userId || "guest";
+    
+    // If user is logged out, return empty history (privacy protection)
+    if (!authUser || !authUser.userId) {
+      return NextResponse.json({ conversations: [] });
+    }
 
     const conn = await connectToDatabase();
     if (!conn) {
       return NextResponse.json({ conversations: [], error: "MongoDB Atlas offline" });
     }
 
-    const conversations = await Conversation.find({ userId }).sort({ updatedAt: -1 }).lean();
+    const conversations = await Conversation.find({ userId: authUser.userId })
+      .sort({ updatedAt: -1 })
+      .lean();
+
     return NextResponse.json({ conversations: conversations || [] });
   } catch (error) {
     console.warn("GET /api/conversations MongoDB error:", error.message);
@@ -22,11 +29,15 @@ export async function GET(request) {
   }
 }
 
-// POST /api/conversations — Save or update conversation directly in MongoDB Atlas
+// POST /api/conversations — Save or update conversation in MongoDB Atlas
 export async function POST(request) {
   try {
     const authUser = await getAuthUser(request);
-    const userId = authUser?.userId || "guest";
+    
+    // Only persist to cloud database for authenticated users
+    if (!authUser || !authUser.userId) {
+      return NextResponse.json({ success: true, isGuest: true });
+    }
 
     const body = await request.json();
     const { id, title, messages } = body;
@@ -44,15 +55,15 @@ export async function POST(request) {
     }
 
     const updated = await Conversation.findOneAndUpdate(
-      { id, userId },
+      { id, userId: authUser.userId },
       { 
         id, 
-        userId,
+        userId: authUser.userId,
         title: title || "New Conversation", 
         messages: messages || [],
         updatedAt: new Date() 
       },
-      { upsert: true, returnDocument: 'after' }
+      { upsert: true, returnDocument: "after" }
     );
 
     return NextResponse.json({ success: true, conversation: updated });
@@ -66,11 +77,13 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const authUser = await getAuthUser(request);
-    const userId = authUser?.userId || "guest";
+    if (!authUser || !authUser.userId) {
+      return NextResponse.json({ success: true });
+    }
 
     const conn = await connectToDatabase();
     if (conn) {
-      await Conversation.deleteMany({ userId });
+      await Conversation.deleteMany({ userId: authUser.userId });
     }
 
     return NextResponse.json({ success: true, message: "All conversations deleted from MongoDB Atlas." });
